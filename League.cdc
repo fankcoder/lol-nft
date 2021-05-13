@@ -285,9 +285,6 @@ pub contract League: NonFungibleToken {
         // 
         // Parameters: playID: The ID of the Play that the Film references
         //
-        // Pre-Conditions:
-        // The Play must exist in the Match and be allowed to mint new Films
-        //
         // Returns: The NFT that was minted
         // 
         pub fun mintFilm(playID: UInt32): @NFT {
@@ -352,7 +349,7 @@ pub contract League: NonFungibleToken {
 
     }
 
-    // The resource that represents the Film NFTs
+    // The Film NFTs resource
     //
     pub resource NFT: NonFungibleToken.INFT {
 
@@ -374,17 +371,13 @@ pub contract League: NonFungibleToken {
             emit FilmMinted(filmID: self.id, playID: playID, matchID: self.data.matchID, serialNumber: self.data.serialNumber)
         }
 
-        // If the Film is destroyed, emit an event to indicate 
-        // to outside ovbservers that it has been destroyed
+        // Emit an  Film destroyed event
         destroy() {
             emit FilmDestroyed(id: self.id)
         }
     }
 
-    // Admin is a special authorization resource that 
-    // allows the owner to perform important functions to modify the 
-    // various aspects of the Plays, Matchs, and Films
-    //
+    // Admin function
     pub resource Admin {
 
         // createPlay creates a new Play struct 
@@ -680,8 +673,6 @@ pub contract League: NonFungibleToken {
 
     // getPlayMetaDataByField returns the metadata associated with a 
     //                        specific field of the metadata
-    //                        Ex: field: "Team" will return something
-    //                        like "Memphis Grizzlies"
     // 
     // Parameters: playID: The id of the Play that is being searched
     //             field: The field to search for
@@ -754,11 +745,6 @@ pub contract League: NonFungibleToken {
         return League.matchs[matchID]?.plays
     }
 
-    // isEditionRetired returns a boolean that indicates if a Match/Play combo
-    //                  (otherwise known as an edition) is retired.
-    //                  If an edition is retired, it still remains in the Match,
-    //                  but Films can no longer be minted from it.
-    // 
     // Parameters: matchID: The id of the Match that is being searched
     //             playID: The id of the Play that is being searched
     //
