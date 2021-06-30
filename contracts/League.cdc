@@ -1,4 +1,4 @@
-import NonFungibleToken from 0xNFTADDRESS
+import NonFungibleToken from 0xADDRESS
 
 pub contract League: NonFungibleToken {
     // Emitted when the League contract is created
@@ -287,7 +287,7 @@ pub contract League: NonFungibleToken {
         //
         // Returns: The NFT that was minted
         // 
-        pub fun mintFilm(playID: UInt32): @NFT {
+        pub fun mintFilm(playID: UInt32, ipfs: String): @NFT {
             pre {
                 self.retired[playID] != nil: "Cannot mint the film: This play doesn't exist."
                 !self.retired[playID]!: "Cannot mint the film from this play: This play has been retired."
@@ -300,7 +300,9 @@ pub contract League: NonFungibleToken {
             // Mint the new film
             let newFilm: @NFT <- create NFT(serialNumber: numInPlay + UInt32(1),
                                               playID: playID,
-                                              matchID: self.matchID)
+                                              matchID: self.matchID,
+                                              ipfs: ipfs
+                                              )
 
             // Increment the count of Films minted for this Play
             self.numberMintedPerPlay[playID] = numInPlay + UInt32(1)
@@ -308,7 +310,7 @@ pub contract League: NonFungibleToken {
             return <-newFilm
         }
 
-        // batchMintFilm mints an arbitrary quantity of Films 
+        // batchMintFilm mints an arbitrary quantity of Films
         // and returns them as a Collection
         //
         // Parameters: playID: the ID of the Play that the Films are minted for
@@ -316,12 +318,12 @@ pub contract League: NonFungibleToken {
         //
         // Returns: Collection object that contains all the Films that were minted
         //
-        pub fun batchMintFilm(playID: UInt32, quantity: UInt64): @Collection {
+        pub fun batchMintFilm(playID: UInt32, quantity: UInt64, ipfs: String): @Collection {
             let newCollection <- create Collection()
 
             var i: UInt64 = 0
             while i < quantity {
-                newCollection.deposit(token: <-self.mintFilm(playID: playID))
+                newCollection.deposit(token: <-self.mintFilm(playID: playID, ipfs:ipfs))
                 i = i + UInt64(1)
             }
 
@@ -340,11 +342,14 @@ pub contract League: NonFungibleToken {
         // The place in the edition that this Film was minted
         // Otherwise know as the serial number
         pub let serialNumber: UInt32
+        //
+        pub let ipfs: String
 
-        init(matchID: UInt32, playID: UInt32, serialNumber: UInt32) {
+        init(matchID: UInt32, playID: UInt32, serialNumber: UInt32,ipfs : String) {
             self.matchID = matchID
             self.playID = playID
             self.serialNumber = serialNumber
+            self.ipfs = ipfs
         }
 
     }
@@ -355,18 +360,18 @@ pub contract League: NonFungibleToken {
 
         // Global unique film ID
         pub let id: UInt64
-        
+
         // Struct of Film metadata
         pub let data: FilmData
 
-        init(serialNumber: UInt32, playID: UInt32, matchID: UInt32) {
+        init(serialNumber: UInt32, playID: UInt32, matchID: UInt32, ipfs: String) {
             // Increment the global Film IDs
             League.totalSupply = League.totalSupply + UInt64(1)
 
             self.id = League.totalSupply
 
             // Match the metadata struct
-            self.data = FilmData(matchID: matchID, playID: playID, serialNumber: serialNumber)
+            self.data = FilmData(matchID: matchID, playID: playID, serialNumber: serialNumber, ipfs:ipfs)
 
             emit FilmMinted(filmID: self.id, playID: playID, matchID: self.data.matchID, serialNumber: self.data.serialNumber)
         }
@@ -649,7 +654,7 @@ pub contract League: NonFungibleToken {
     // getAllHeros returns all the heros in League
     //
     // Returns: An array of all the heros that have been created
-    pub fun getAllHeros(): [League.Play] {
+    pub fun getAllHeros(): [League.Hero] {
         return League.heroDatas.values
     }
 
@@ -816,6 +821,7 @@ pub contract League: NonFungibleToken {
         // Initialize contract fields
         self.currentSchedule = 0
         self.playDatas = {}
+        self.heroDatas = {}
         self.matchDatas = {}
         self.matchs <- {}
         self.nextPlayID = 1
@@ -824,13 +830,13 @@ pub contract League: NonFungibleToken {
         self.totalSupply = 0
 
         // Put a new Collection in storage
-        self.account.save<@Collection>(<- create Collection(), to: /storage/FilmCollection)
+        self.account.save<@Collection>(<- create Collection(), to: /storage/FilmCollection1)
 
         // Create a public capability for the Collection
-        self.account.link<&{FilmCollectionPublic}>(/public/FilmCollection, target: /storage/FilmCollection)
+        self.account.link<&{FilmCollectionPublic}>(/public/FilmCollection, target: /storage/FilmCollection1)
 
         // Put the Minter in storage
-        self.account.save<@Admin>(<- create Admin(), to: /storage/LeagueAdmin)
+        self.account.save<@Admin>(<- create Admin(), to: /storage/LeagueAdmin1)
 
         emit ContractInitialized()
     }
