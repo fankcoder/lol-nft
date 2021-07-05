@@ -830,13 +830,13 @@ pub contract League: NonFungibleToken {
         self.totalSupply = 0
 
         // Put a new Collection in storage
-        self.account.save<@Collection>(<- create Collection(), to: /storage/FilmCollection1)
+        self.account.save<@Collection>(<- create Collection(), to: /storage/FilmCollection)
 
         // Create a public capability for the Collection
-        self.account.link<&{FilmCollectionPublic}>(/public/FilmCollection, target: /storage/FilmCollection1)
+        self.account.link<&{FilmCollectionPublic}>(/public/FilmCollection, target: /storage/FilmCollection)
 
         // Put the Minter in storage
-        self.account.save<@Admin>(<- create Admin(), to: /storage/LeagueAdmin1)
+        self.account.save<@Admin>(<- create Admin(), to: /storage/LeagueAdmin)
 
         emit ContractInitialized()
     }
