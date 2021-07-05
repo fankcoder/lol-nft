@@ -1,6 +1,6 @@
 import FungibleToken from 0xFUNGIBLETOKENADDRESS
 import DapperUtilityCoin from 0xDUCADDRESS
-import League from 0xTOPSHOTADDRESS
+import League from 0xNFTADDRESS
 import Market from 0xMARKETADDRESS
 
 // This transaction mints DapperUtilityCoin (a Fungible Token) to self,

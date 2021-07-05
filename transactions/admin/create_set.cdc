@@ -1,4 +1,4 @@
-import League from 0xTOPSHOTADDRESS
+import League from 0xNFTADDRESS
 
 // This transaction is for the admin to create a new match resource
 // and store it in the top shot smart contract

@@ -1,6 +1,6 @@
 import FungibleToken from 0xFUNGIBLETOKENADDRESS
 import DapperUtilityCoin from 0xDUCADDRESS
-import League from 0xTOPSHOTADDRESS
+import League from 0xNFTADDRESS
 import LeagueMarketV2 from 0xMARKETV2ADDRESS
 
 // This transaction is for a user to purchase a moment that another user

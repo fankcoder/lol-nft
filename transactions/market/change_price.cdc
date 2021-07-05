@@ -1,4 +1,4 @@
-import League from 0xTOPSHOTADDRESS
+import League from 0xNFTADDRESS
 import Market from 0xMARKETADDRESS
 
 // This transaction changes the price of a film that a user has for sale

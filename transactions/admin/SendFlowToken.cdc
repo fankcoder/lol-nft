@@ -1,5 +1,5 @@
-import FungibleToken from 0xTOPSHOTADDRESS
-import FlowToken from 0xTOPSHOTADDRESS
+import FungibleToken from 0xNFTADDRESS
+import FlowToken from 0xNFTADDRESS
 
 transaction(amount: UFix64, recipient: Address) {
   let sentVault: @FungibleToken.Vault

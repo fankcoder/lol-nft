@@ -1,4 +1,4 @@
-import League from 0xTOPSHOTADDRESS
+import League from 0xNFTADDRESS
 
 // This script returns the number of specified moments that have been
 // minted for the specified edition

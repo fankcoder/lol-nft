@@ -1,4 +1,4 @@
-import League from 0xTOPSHOTADDRESS
+import League from 0xNFTADDRESS
 
 // This transaction is how a Top Shot admin adds a created play to a match
 

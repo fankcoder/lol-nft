@@ -1,4 +1,4 @@
-import League from 0xTOPSHOTADDRESS
+import League from 0xNFTADDRESS
 import LeagueShardedCollection from 0xSHARDEDADDRESS
 
 // This transaction creates and stores an empty moment collection 

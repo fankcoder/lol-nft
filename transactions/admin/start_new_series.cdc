@@ -1,4 +1,4 @@
-import League from 0xTOPSHOTADDRESS
+import League from 0xNFTADDRESS
 
 // This transaction is for an Admin to start a new Top Shot schedule
 

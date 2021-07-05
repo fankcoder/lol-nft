@@ -1,4 +1,4 @@
-import League from 0xTOPSHOTADDRESS
+import League from 0xNFTADDRESS
 
 // This script checks whether for each MatchID/PlayID combo,
 // they own a moment matching that MatchPlay.

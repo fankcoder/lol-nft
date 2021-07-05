@@ -1,4 +1,4 @@
-import League from 0xTOPSHOTADDRESS
+import League from 0xNFTADDRESS
 
 // This script returns a boolean indicating if the specified match is locked
 // meaning new plays cannot be added to it

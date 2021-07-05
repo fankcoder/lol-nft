@@ -1,4 +1,4 @@
-import League from 0xTOPSHOTADDRESS
+import League from 0xNFTADDRESS
 
 // This transaction mints multiple films
 // from a single match/play combination (otherwise known as edition)

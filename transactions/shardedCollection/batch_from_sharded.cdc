@@ -1,5 +1,5 @@
 import NonFungibleToken from 0xNFTADDRESS
-import League from 0xTOPSHOTADDRESS
+import League from 0xNFTADDRESS
 import LeagueShardedCollection from 0xSHARDEDADDRESS
 
 // This transaction deposits a number of NFTs to a recipient

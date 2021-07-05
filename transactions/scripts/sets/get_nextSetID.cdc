@@ -1,4 +1,4 @@
-import League from 0xTOPSHOTADDRESS
+import League from 0xNFTADDRESS
 
 // This script reads the next Match ID from the League contract and
 // returns that number to the caller

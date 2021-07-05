@@ -1,4 +1,4 @@
-import League from 0xTOPSHOTADDRESS
+import League from 0xNFTADDRESS
 
 // This script gets the serial number of a moment
 // by borrowing a reference to the moment 

@@ -1,4 +1,4 @@
-import League from 0xTOPSHOTADDRESS
+import League from 0xNFTADDRESS
 
 // This is the script to get a list of all the moments' ids an account owns
 // Just change the argument to `getAccount` to whatever account you want

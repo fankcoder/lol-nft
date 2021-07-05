@@ -1,5 +1,5 @@
 import NonFungibleToken from 0xNFTADDRESS
-import League from 0xTOPSHOTADDRESS
+import League from 0xNFTADDRESS
 import LeagueShardedCollection from 0xSHARDEDADDRESS
 
 // This transaction is what Top Shot uses to send the films in a "pack" to

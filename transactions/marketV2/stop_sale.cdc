@@ -1,4 +1,4 @@
-import League from 0xTOPSHOTADDRESS
+import League from 0xNFTADDRESS
 import LeagueMarketV2 from 0xMARKETV2ADDRESS
 
 // This transaction is for a user to stop a moment sale in their account

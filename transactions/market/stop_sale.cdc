@@ -1,4 +1,4 @@
-import League from 0xTOPSHOTADDRESS
+import League from 0xNFTADDRESS
 import Market from 0xMARKETADDRESS
 
 // This transaction is for a user to stop a film sale in their account

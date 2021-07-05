@@ -1,4 +1,4 @@
-import League from 0xTOPSHOTADDRESS
+import League from 0xNFTADDRESS
 
 // This transaction creates a new play struct 
 // and stores it in the Top Shot smart contract

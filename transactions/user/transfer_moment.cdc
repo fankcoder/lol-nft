@@ -1,5 +1,5 @@
 import NonFungibleToken from 0xNFTADDRESS
-import League from 0xTOPSHOTADDRESS
+import League from 0xNFTADDRESS
 
 // This transaction transfers a film to a recipient
 

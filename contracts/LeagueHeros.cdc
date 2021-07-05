@@ -1,6 +1,6 @@
-import NonFungibleToken from 0xADDRESS
+import NonFungibleToken from 0xNFTADDRESS
 
-pub contract League: NonFungibleToken {
+pub contract LeagueHeros: NonFungibleToken {
     // Emitted when the League contract is created
     pub event ContractInitialized()
 
@@ -87,7 +87,7 @@ pub contract League: NonFungibleToken {
         // This is not the long term way NFT metadata will be stored. It's a temporary
         // construct while we figure out a better way to do metadata.
         //
-        pub let metadata: {String: String}
+        access(self) pub let metadata: {String: String}
 
         init(metadata: {String: String}) {
             pre {
@@ -113,7 +113,7 @@ pub contract League: NonFungibleToken {
         // This is not the long term way NFT metadata will be stored. It's a temporary
         // construct while we figure out a better way to do metadata.
         //
-        pub let metadata: {String: String}
+        access(self) pub let metadata: {String: String}
 
         init(metadata: {String: String}) {
             pre {
@@ -176,7 +176,7 @@ pub contract League: NonFungibleToken {
         pub var plays: [UInt32]
 
         // When a Play is retired, this is match to true and cannot be changed.
-        pub var retired: {UInt32: Bool}
+        access(self) pub var retired: {UInt32: Bool}
 
         // When a Match is created, it is default unlocked 
         // and Plays are allowed to be added to it.
@@ -190,7 +190,7 @@ pub contract League: NonFungibleToken {
         // that have been minted for specific Plays in this Match.
         // When a Film is minted, this value is stored in the Film to
         // show its place in the Match, eg. 13 of 60.
-        pub var numberMintedPerPlay: {UInt32: UInt32}
+        access(self) pub var numberMintedPerPlay: {UInt32: UInt32}
 
         init(name: String) {
             self.matchID = League.nextMatchID
@@ -627,6 +627,7 @@ pub contract League: NonFungibleToken {
         // dreams of the entire city of Houston.
         //
         destroy() {
+            League.totalSupply = League.totalSupply - UInt64(1)
             destroy self.ownedNFTs
         }
     }

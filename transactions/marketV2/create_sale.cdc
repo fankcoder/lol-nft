@@ -1,5 +1,5 @@
 import FungibleToken from 0xFUNGIBLETOKENADDRESS
-import League from 0xTOPSHOTADDRESS
+import League from 0xNFTADDRESS
 import LeagueMarketV2 from 0xMARKETV2ADDRESS
 
 // This transaction creates a sale collection and stores it in the signer's account

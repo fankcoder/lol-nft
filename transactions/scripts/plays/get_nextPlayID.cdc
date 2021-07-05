@@ -1,4 +1,4 @@
-import League from 0xTOPSHOTADDRESS
+import League from 0xNFTADDRESS
 
 // This script reads the public nextPlayID from the League contract and
 // returns that number to the caller

@@ -1,4 +1,4 @@
-import League from 0xTOPSHOTADDRESS
+import League from 0xNFTADDRESS
 import TopshotAdminReceiver from 0xADMINRECEIVERADDRESS
 
 // this transaction takes a League Admin resource and

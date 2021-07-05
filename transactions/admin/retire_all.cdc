@@ -1,4 +1,4 @@
-import League from 0xTOPSHOTADDRESS
+import League from 0xNFTADDRESS
 
 // This is a transaction an admin would use to retire all the plays in a match
 // which makes it so that no more films can be minted from the retired plays

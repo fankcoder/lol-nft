@@ -1,4 +1,4 @@
-import League from 0xTOPSHOTADDRESS
+import League from 0xNFTADDRESS
 
 // This script returns the value for the specified metadata field
 // associated with a play in the League smart contract

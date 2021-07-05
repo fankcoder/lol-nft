@@ -1,4 +1,4 @@
-import League from 0xTOPSHOTADDRESS
+import League from 0xNFTADDRESS
 
 // This script gets the schedule associated with a moment
 // in a collection by getting a reference to the moment

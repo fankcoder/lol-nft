@@ -1,4 +1,4 @@
-import League from 0xTOPSHOTADDRESS
+import League from 0xNFTADDRESS
 
 // This transaction is what an admin would use to mint a single new film
 // and deposit it in a user's collection

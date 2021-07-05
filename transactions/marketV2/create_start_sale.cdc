@@ -1,6 +1,6 @@
 import FungibleToken from 0xFUNGIBLETOKENADDRESS
 import LeagueMarketV2 from 0xMARKETV2ADDRESS
-import League from 0xTOPSHOTADDRESS
+import League from 0xNFTADDRESS
 
 transaction(tokenReceiverPath: PublicPath, beneficiaryAccount: Address, cutPercentage: UFix64, momentID: UInt64, price: UFix64) {
     prepare(acct: AuthAccount) {
