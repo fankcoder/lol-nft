@@ -87,7 +87,7 @@ pub contract LeagueHeros: NonFungibleToken {
         // This is not the long term way NFT metadata will be stored. It's a temporary
         // construct while we figure out a better way to do metadata.
         //
-        access(self) pub let metadata: {String: String}
+        access(contract) pub let metadata: {String: String}
 
         init(metadata: {String: String}) {
             pre {
@@ -113,7 +113,7 @@ pub contract LeagueHeros: NonFungibleToken {
         // This is not the long term way NFT metadata will be stored. It's a temporary
         // construct while we figure out a better way to do metadata.
         //
-        access(self) pub let metadata: {String: String}
+        access(contract) pub let metadata: {String: String}
 
         init(metadata: {String: String}) {
             pre {
@@ -176,7 +176,7 @@ pub contract LeagueHeros: NonFungibleToken {
         pub var plays: [UInt32]
 
         // When a Play is retired, this is match to true and cannot be changed.
-        access(self) pub var retired: {UInt32: Bool}
+        access(contract) pub var retired: {UInt32: Bool}
 
         // When a Match is created, it is default unlocked 
         // and Plays are allowed to be added to it.
@@ -190,7 +190,7 @@ pub contract LeagueHeros: NonFungibleToken {
         // that have been minted for specific Plays in this Match.
         // When a Film is minted, this value is stored in the Film to
         // show its place in the Match, eg. 13 of 60.
-        access(self) pub var numberMintedPerPlay: {UInt32: UInt32}
+        access(contract) pub var numberMintedPerPlay: {UInt32: UInt32}
 
         init(name: String) {
             self.matchID = League.nextMatchID
