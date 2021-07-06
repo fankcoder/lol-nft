@@ -43,7 +43,7 @@ func TestNFTDeployment(t *testing.T) {
 	c := []byte(nftCode1)
 	// c[0] = 'c'
 	s2 := string(c)
-	print(s2)
+	// print(s2)
 	s2 = strings.ReplaceAll(s2, "NFTADDRESS", nftAddr.String())
 	fmt.Println(nftAddr.String())
 	// topshotCode := contracts.GenerateLeagueHerosContract(nftAddr.String())
