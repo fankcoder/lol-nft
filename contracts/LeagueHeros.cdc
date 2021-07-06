@@ -1,7 +1,7 @@
-import NonFungibleToken from 0xNFTADDRESS
+import NonFungibleToken from 0xf8d6e0586b0a20c7
 
 pub contract LeagueHeros: NonFungibleToken {
-    // Emitted when the League contract is created
+    // Emitted when the LeagueHeros contract is created
     pub event ContractInitialized()
 
     // Emitted when a new Play struct is created
@@ -33,7 +33,7 @@ pub contract LeagueHeros: NonFungibleToken {
     pub event FilmDestroyed(id: UInt64)
 
     // -----------------------------------------------------------------------
-    // League contract-level fields.
+    // LeagueHeros contract-level fields.
     // These contain actual values that are stored in the smart contract.
     // -----------------------------------------------------------------------
 
@@ -67,7 +67,7 @@ pub contract LeagueHeros: NonFungibleToken {
     // matchID is assigned to the new match's ID and then is incremented by 1.
     pub var nextMatchID: UInt32
 
-    // The total number of League Film NFTs that have been created
+    // The total number of LeagueHeros Film NFTs that have been created
     // Because NFTs can be destroyed, it doesn't necessarily mean that this
     // reflects the total number of NFTs in existence, just the number that
     // have been minted to date. Also used as global film IDs for minting.
@@ -87,17 +87,17 @@ pub contract LeagueHeros: NonFungibleToken {
         // This is not the long term way NFT metadata will be stored. It's a temporary
         // construct while we figure out a better way to do metadata.
         //
-        access(contract) pub let metadata: {String: String}
+        access(contract) let metadata: {String: String}
 
         init(metadata: {String: String}) {
             pre {
                 metadata.length != 0: "New Play metadata cannot be empty"
             }
-            self.playID = League.nextPlayID
+            self.playID = LeagueHeros.nextPlayID
             self.metadata = metadata
 
             // Increment the ID so that it isn't used again
-            League.nextPlayID = League.nextPlayID + UInt32(1)
+            LeagueHeros.nextPlayID = LeagueHeros.nextPlayID + UInt32(1)
 
             emit PlayCreated(id: self.playID, metadata: metadata)
         }
@@ -113,17 +113,17 @@ pub contract LeagueHeros: NonFungibleToken {
         // This is not the long term way NFT metadata will be stored. It's a temporary
         // construct while we figure out a better way to do metadata.
         //
-        access(contract) pub let metadata: {String: String}
+        access(contract) let metadata: {String: String}
 
         init(metadata: {String: String}) {
             pre {
                 metadata.length != 0: "New Hero metadata cannot be empty"
             }
-            self.heroID = League.nextHeroID
+            self.heroID = LeagueHeros.nextHeroID
             self.metadata = metadata
 
             // Increment the ID so that it isn't used again
-            League.nextHeroID = League.nextHeroID + UInt32(1)
+            LeagueHeros.nextHeroID = LeagueHeros.nextHeroID + UInt32(1)
 
             emit HeroCreated(id: self.heroID, metadata: metadata)
         }
@@ -154,12 +154,12 @@ pub contract LeagueHeros: NonFungibleToken {
             pre {
                 name.length > 0: "New Match name cannot be empty"
             }
-            self.matchID = League.nextMatchID
+            self.matchID = LeagueHeros.nextMatchID
             self.name = name
-            self.schedule = League.currentSchedule
+            self.schedule = LeagueHeros.currentSchedule
 
             // Increment the matchID so that it isn't used again
-            League.nextMatchID = League.nextMatchID + UInt32(1)
+            LeagueHeros.nextMatchID = LeagueHeros.nextMatchID + UInt32(1)
 
             emit MatchCreated(matchID: self.matchID, schedule: self.schedule)
         }
@@ -176,7 +176,7 @@ pub contract LeagueHeros: NonFungibleToken {
         pub var plays: [UInt32]
 
         // When a Play is retired, this is match to true and cannot be changed.
-        access(contract) pub var retired: {UInt32: Bool}
+        access(contract) var retired: {UInt32: Bool}
 
         // When a Match is created, it is default unlocked 
         // and Plays are allowed to be added to it.
@@ -190,17 +190,17 @@ pub contract LeagueHeros: NonFungibleToken {
         // that have been minted for specific Plays in this Match.
         // When a Film is minted, this value is stored in the Film to
         // show its place in the Match, eg. 13 of 60.
-        access(contract) pub var numberMintedPerPlay: {UInt32: UInt32}
+        access(contract) var numberMintedPerPlay: {UInt32: UInt32}
 
         init(name: String) {
-            self.matchID = League.nextMatchID
+            self.matchID = LeagueHeros.nextMatchID
             self.plays = []
             self.retired = {}
             self.locked = false
             self.numberMintedPerPlay = {}
 
             // Create a new MatchData for this Match and store it in contract storage
-            League.matchDatas[self.matchID] = MatchData(name: name)
+            LeagueHeros.matchDatas[self.matchID] = MatchData(name: name)
         }
 
         // addPlay adds a play to the match
@@ -214,7 +214,7 @@ pub contract LeagueHeros: NonFungibleToken {
         //
         pub fun addPlay(playID: UInt32) {
             pre {
-                League.playDatas[playID] != nil: "Cannot add the Play to Match: Play doesn't exist."
+                LeagueHeros.playDatas[playID] != nil: "Cannot add the Play to Match: Play doesn't exist."
                 !self.locked: "Cannot add the play to the Match after the match has been locked."
                 self.numberMintedPerPlay[playID] == nil: "The play has already beed added to the match."
             }
@@ -366,9 +366,9 @@ pub contract LeagueHeros: NonFungibleToken {
 
         init(serialNumber: UInt32, playID: UInt32, matchID: UInt32, ipfs: String) {
             // Increment the global Film IDs
-            League.totalSupply = League.totalSupply + UInt64(1)
+            LeagueHeros.totalSupply = LeagueHeros.totalSupply + UInt64(1)
 
-            self.id = League.totalSupply
+            self.id = LeagueHeros.totalSupply
 
             // Match the metadata struct
             self.data = FilmData(matchID: matchID, playID: playID, serialNumber: serialNumber, ipfs:ipfs)
@@ -386,7 +386,7 @@ pub contract LeagueHeros: NonFungibleToken {
     pub resource Admin {
 
         // createPlay creates a new Play struct 
-        // and stores it in the Plays dictionary in the League smart contract
+        // and stores it in the Plays dictionary in the LeagueHeros smart contract
         // Parameters: metadata: A dictionary mapping metadata titles to their data
         // Returns: the ID of the new Play object
         //
@@ -396,13 +396,13 @@ pub contract LeagueHeros: NonFungibleToken {
             let newID = newPlay.playID
 
             // Store it in the contract storage
-            League.playDatas[newID] = newPlay
+            LeagueHeros.playDatas[newID] = newPlay
 
             return newID
         }
 
         // createHero creates a new Hero struct 
-        // and stores it in the Heros dictionary in the League smart contract
+        // and stores it in the Heros dictionary in the LeagueHeros smart contract
         // Parameters: metadata: A dictionary mapping metadata titles to their data
         // Returns: the ID of the new Hero object
         //
@@ -412,13 +412,13 @@ pub contract LeagueHeros: NonFungibleToken {
             let newID = newHero.heroID
 
             // Store it in the contract storage
-            League.heroDatas[newID] = newHero
+            LeagueHeros.heroDatas[newID] = newHero
 
             return newID
         }
 
         // createMatch creates a new Match resource and stores it
-        // in the matchs mapping in the League contract
+        // in the matchs mapping in the LeagueHeros contract
         //
         // Parameters: name: The name of the Match
         //
@@ -427,10 +427,10 @@ pub contract LeagueHeros: NonFungibleToken {
             var newMatch <- create Match(name: name)
 
             // Store it in the matchs mapping field
-            League.matchs[newMatch.matchID] <-! newMatch
+            LeagueHeros.matchs[newMatch.matchID] <-! newMatch
         }
 
-        // borrowMatch returns a reference to a match in the League
+        // borrowMatch returns a reference to a match in the LeagueHeros
         // contract so that the admin can call methods on it
         //
         // Parameters: matchID: The ID of the Match that you want to
@@ -441,12 +441,12 @@ pub contract LeagueHeros: NonFungibleToken {
         //
         pub fun borrowMatch(matchID: UInt32): &Match {
             pre {
-                League.matchs[matchID] != nil: "Cannot borrow Match: The Match doesn't exist"
+                LeagueHeros.matchs[matchID] != nil: "Cannot borrow Match: The Match doesn't exist"
             }
             
             // Get a reference to the Match and return it
             // use `&` to indicate the reference to the object and type
-            return &League.matchs[matchID] as &Match
+            return &LeagueHeros.matchs[matchID] as &Match
         }
 
         // startNewSchedule ends the current schedule by incrementing
@@ -457,12 +457,12 @@ pub contract LeagueHeros: NonFungibleToken {
         //
         pub fun startNewSchedule(): UInt32 {
             // End the current schedule and start a new one
-            // by incrementing the League schedule number
-            League.currentSchedule = League.currentSchedule + UInt32(1)
+            // by incrementing the LeagueHeros schedule number
+            LeagueHeros.currentSchedule = LeagueHeros.currentSchedule + UInt32(1)
 
-            emit NewScheduleStarted(newCurrentSchedule: League.currentSchedule)
+            emit NewScheduleStarted(newCurrentSchedule: LeagueHeros.currentSchedule)
 
-            return League.currentSchedule
+            return LeagueHeros.currentSchedule
         }
 
         // createNewAdmin creates a new Admin resource
@@ -480,7 +480,7 @@ pub contract LeagueHeros: NonFungibleToken {
         pub fun batchDeposit(tokens: @NonFungibleToken.Collection)
         pub fun getIDs(): [UInt64]
         pub fun borrowNFT(id: UInt64): &NonFungibleToken.NFT
-        pub fun borrowFilm(id: UInt64): &League.NFT? {
+        pub fun borrowFilm(id: UInt64): &LeagueHeros.NFT? {
             // If the result isn't nil, the id of the returned reference
             // should be the same as the argument to the function
             post {
@@ -546,9 +546,9 @@ pub contract LeagueHeros: NonFungibleToken {
         //
         pub fun deposit(token: @NonFungibleToken.NFT) {
             
-            // Cast the deposited token as a League NFT to make sure
+            // Cast the deposited token as a LeagueHeros NFT to make sure
             // it is the correct type
-            let token <- token as! @League.NFT
+            let token <- token as! @LeagueHeros.NFT
 
             // Get the token's ID
             let id = token.id
@@ -595,7 +595,7 @@ pub contract LeagueHeros: NonFungibleToken {
         // Returns: A reference to the NFT
         //
         // Note: This only allows the caller to read the ID of the NFT,
-        // not any League specific data. Please use borrowFilm to 
+        // not any LeagueHeros specific data. Please use borrowFilm to 
         // read Film data.
         //
         pub fun borrowNFT(id: UInt64): &NonFungibleToken.NFT {
@@ -612,10 +612,10 @@ pub contract LeagueHeros: NonFungibleToken {
         // Parameters: id: The ID of the NFT to get the reference for
         //
         // Returns: A reference to the NFT
-        pub fun borrowFilm(id: UInt64): &League.NFT? {
+        pub fun borrowFilm(id: UInt64): &LeagueHeros.NFT? {
             if self.ownedNFTs[id] != nil {
                 let ref = &self.ownedNFTs[id] as auth &NonFungibleToken.NFT
-                return ref as! &League.NFT
+                return ref as! &LeagueHeros.NFT
             } else {
                 return nil
             }
@@ -627,13 +627,13 @@ pub contract LeagueHeros: NonFungibleToken {
         // dreams of the entire city of Houston.
         //
         destroy() {
-            League.totalSupply = League.totalSupply - UInt64(1)
+            LeagueHeros.totalSupply = LeagueHeros.totalSupply - UInt64(1)
             destroy self.ownedNFTs
         }
     }
 
     // -----------------------------------------------------------------------
-    // League contract-level function definitions
+    // LeagueHeros contract-level function definitions
     // -----------------------------------------------------------------------
 
     // createEmptyCollection creates a new, empty Collection object so that
@@ -642,21 +642,21 @@ pub contract LeagueHeros: NonFungibleToken {
     // Films in transactions.
     //
     pub fun createEmptyCollection(): @NonFungibleToken.Collection {
-        return <-create League.Collection()
+        return <-create LeagueHeros.Collection()
     }
 
-    // getAllPlays returns all the plays in League
+    // getAllPlays returns all the plays in LeagueHeros
     //
     // Returns: An array of all the plays that have been created
-    pub fun getAllPlays(): [League.Play] {
-        return League.playDatas.values
+    pub fun getAllPlays(): [LeagueHeros.Play] {
+        return LeagueHeros.playDatas.values
     }
 
-    // getAllHeros returns all the heros in League
+    // getAllHeros returns all the heros in LeagueHeros
     //
     // Returns: An array of all the heros that have been created
-    pub fun getAllHeros(): [League.Hero] {
-        return League.heroDatas.values
+    pub fun getAllHeros(): [LeagueHeros.Hero] {
+        return LeagueHeros.heroDatas.values
     }
 
     // getPlayMetaData returns all the metadata associated with a specific Play
@@ -686,7 +686,7 @@ pub contract LeagueHeros: NonFungibleToken {
     // Returns: The metadata field as a String Optional
     pub fun getPlayMetaDataByField(playID: UInt32, field: String): String? {
         // Don't force a revert if the playID or field is invalid
-        if let play = League.playDatas[playID] {
+        if let play = LeagueHeros.playDatas[playID] {
             return play.metadata[field]
         } else {
             return nil
@@ -701,7 +701,7 @@ pub contract LeagueHeros: NonFungibleToken {
     // Returns: The name of the Match
     pub fun getMatchName(matchID: UInt32): String? {
         // Don't force a revert if the matchID is invalid
-        return League.matchDatas[matchID]?.name
+        return LeagueHeros.matchDatas[matchID]?.name
     }
 
     // getMatchSchedule returns the schedule that the specified Match
@@ -712,7 +712,7 @@ pub contract LeagueHeros: NonFungibleToken {
     // Returns: The schedule that the Match belongs to
     pub fun getMatchSchedule(matchID: UInt32): UInt32? {
         // Don't force a revert if the matchID is invalid
-        return League.matchDatas[matchID]?.schedule
+        return LeagueHeros.matchDatas[matchID]?.schedule
     }
 
     // getMatchIDsByName returns the IDs that the specified Match name
@@ -725,7 +725,7 @@ pub contract LeagueHeros: NonFungibleToken {
         var matchIDs: [UInt32] = []
 
         // Iterate through all the matchDatas and search for the name
-        for matchData in League.matchDatas.values {
+        for matchData in LeagueHeros.matchDatas.values {
             if matchName == matchData.name {
                 // If the name is found, return the ID
                 matchIDs.append(matchData.matchID)
@@ -748,7 +748,7 @@ pub contract LeagueHeros: NonFungibleToken {
     // Returns: An array of Play IDs
     pub fun getPlaysInMatch(matchID: UInt32): [UInt32]? {
         // Don't force a revert if the matchID is invalid
-        return League.matchs[matchID]?.plays
+        return LeagueHeros.matchs[matchID]?.plays
     }
 
     // Parameters: matchID: The id of the Match that is being searched
@@ -758,13 +758,13 @@ pub contract LeagueHeros: NonFungibleToken {
     pub fun isEditionRetired(matchID: UInt32, playID: UInt32): Bool? {
         // Don't force a revert if the match or play ID is invalid
         // Remove the match from the dictionary to get its field
-        if let matchToRead <- League.matchs.remove(key: matchID) {
+        if let matchToRead <- LeagueHeros.matchs.remove(key: matchID) {
 
             // See if the Play is retired from this Match
             let retired = matchToRead.retired[playID]
 
             // Put the Match back in the contract storage
-            League.matchs[matchID] <-! matchToRead
+            LeagueHeros.matchs[matchID] <-! matchToRead
 
             // Return the retired status
             return retired
@@ -785,7 +785,7 @@ pub contract LeagueHeros: NonFungibleToken {
     // Returns: Boolean indicating if the Match is locked or not
     pub fun isMatchLocked(matchID: UInt32): Bool? {
         // Don't force a revert if the matchID is invalid
-        return League.matchs[matchID]?.locked
+        return LeagueHeros.matchs[matchID]?.locked
     }
 
     // getNumFilmsInEdition return the number of Films that have been 
@@ -799,13 +799,13 @@ pub contract LeagueHeros: NonFungibleToken {
     pub fun getNumFilmsInEdition(matchID: UInt32, playID: UInt32): UInt32? {
         // Don't force a revert if the Match or play ID is invalid
         // Remove the Match from the dictionary to get its field
-        if let matchToRead <- League.matchs.remove(key: matchID) {
+        if let matchToRead <- LeagueHeros.matchs.remove(key: matchID) {
 
             // Read the numMintedPerPlay
             let amount = matchToRead.numberMintedPerPlay[playID]
 
             // Put the Match back into the Matchs dictionary
-            League.matchs[matchID] <-! matchToRead
+            LeagueHeros.matchs[matchID] <-! matchToRead
 
             return amount
         } else {
@@ -815,7 +815,7 @@ pub contract LeagueHeros: NonFungibleToken {
     }
 
     // -----------------------------------------------------------------------
-    // League initialization function
+    // LeagueHeros initialization function
     // -----------------------------------------------------------------------
     //
     init() {
@@ -837,7 +837,7 @@ pub contract LeagueHeros: NonFungibleToken {
         self.account.link<&{FilmCollectionPublic}>(/public/FilmCollection, target: /storage/FilmCollection)
 
         // Put the Minter in storage
-        self.account.save<@Admin>(<- create Admin(), to: /storage/LeagueAdmin)
+        self.account.save<@Admin>(<- create Admin(), to: /storage/LeagueHerosAdmin)
 
         emit ContractInitialized()
     }
