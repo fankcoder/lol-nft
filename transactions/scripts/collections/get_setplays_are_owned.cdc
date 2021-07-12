@@ -1,4 +1,4 @@
-import League from 0xNFTADDRESS
+import LeagueHeros from "../../../contracts/LeagueHeros.cdc"
 
 // This script checks whether for each MatchID/PlayID combo,
 // they own a moment matching that MatchPlay.
@@ -21,7 +21,7 @@ pub fun main(account: Address, matchIDs: [UInt32], playIDs: [UInt32]): Bool {
     )
 
     let collectionRef = getAccount(account).getCapability(/public/FilmCollection)
-                .borrow<&{League.FilmCollectionPublic}>()
+                .borrow<&{LeagueHeros.FilmCollectionPublic}>()
                 ?? panic("Could not get public moment collection reference")
 
     let momentIDs = collectionRef.getIDs()

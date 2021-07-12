@@ -12,7 +12,7 @@ import LeagueHeros from "../../../contracts/LeagueHeros.cdc"
 // Returns: [UInt64]
 // list of all moments' ids an account owns
 
-pub fun main(account: Address): [UInt64] {
+pub fun main(account: Address): Int {
 
     let acct = getAccount(account)
 
@@ -21,5 +21,5 @@ pub fun main(account: Address): [UInt64] {
 
     log(collectionRef.getIDs())
 
-    return collectionRef.getIDs()
+    return collectionRef.getIDs().length
 }

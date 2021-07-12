@@ -1,5 +1,5 @@
-import NonFungibleToken from 0xNFTADDRESS
-import League from 0xNFTADDRESS
+import NonFungibleToken from "../../contracts/NonFungibleToken.cdc"
+import LeagueHeros from "../../contracts/LeagueHeros.cdc"
 
 // This transaction transfers a number of films to a recipient
 
@@ -14,7 +14,7 @@ transaction(recipientAddress: Address, filmIDs: [UInt64]) {
     
     prepare(acct: AuthAccount) {
 
-        self.transferTokens <- acct.borrow<&League.Collection>(from: /storage/FilmCollection)!.batchWithdraw(ids: filmIDs)
+        self.transferTokens <- acct.borrow<&LeagueHeros.Collection>(from: /storage/FilmCollection)!.batchWithdraw(ids: filmIDs)
     }
 
     execute {
@@ -23,7 +23,7 @@ transaction(recipientAddress: Address, filmIDs: [UInt64]) {
         let recipient = getAccount(recipientAddress)
 
         // get the Collection reference for the receiver
-        let receiverRef = recipient.getCapability(/public/FilmCollection).borrow<&{League.FilmCollectionPublic}>()
+        let receiverRef = recipient.getCapability(/public/FilmCollection).borrow<&{LeagueHeros.FilmCollectionPublic}>()
             ?? panic("Could not borrow a reference to the recipients film receiver")
 
         // deposit the NFT in the receivers collection

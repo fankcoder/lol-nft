@@ -1,4 +1,4 @@
-import League from 0xNFTADDRESS
+import LeagueHeros from "../../../contracts/LeagueHeros.cdc"
 
 // This script reads the schedule of the specified match and returns it
 
@@ -11,7 +11,7 @@ import League from 0xNFTADDRESS
 
 pub fun main(matchID: UInt32): UInt32 {
 
-    let schedule = League.getMatchSeries(matchID: matchID)
+    let schedule = LeagueHeros.getMatchSchedule(matchID: matchID)
         ?? panic("Could not find the specified match")
 
     return schedule

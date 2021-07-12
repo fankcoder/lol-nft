@@ -1,14 +1,14 @@
-import League from 0xNFTADDRESS
+import LeagueHeros from "../../../contracts/LeagueHeros.cdc"
 
-// This script reads the public nextPlayID from the League contract and
+// This script reads the public nextPlayID from the LeagueHeros contract and
 // returns that number to the caller
 
 // Returns: UInt32
-// the nextPlayID field in League contract
+// the nextPlayID field in LeagueHeros contract
 
 pub fun main(): UInt32 {
 
-    log(League.nextPlayID)
+    log(LeagueHeros.nextPlayID)
 
-    return League.nextPlayID
+    return LeagueHeros.nextPlayID
 }

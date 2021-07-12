@@ -1,4 +1,4 @@
-import League from 0xNFTADDRESS
+import LeagueHeros from "../../../contracts/LeagueHeros.cdc"
 
 // This script gets the schedule associated with a moment
 // in a collection by getting a reference to the moment
@@ -15,7 +15,7 @@ import League from 0xNFTADDRESS
 pub fun main(account: Address, id: UInt64): UInt32 {
 
     let collectionRef = getAccount(account).getCapability(/public/FilmCollection)
-        .borrow<&{League.FilmCollectionPublic}>()
+        .borrow<&{LeagueHeros.FilmCollectionPublic}>()
         ?? panic("Could not get public moment collection reference")
 
     let token = collectionRef.borrowFilm(id: id)
@@ -23,5 +23,5 @@ pub fun main(account: Address, id: UInt64): UInt32 {
 
     let data = token.data
 
-    return League.getMatchSeries(matchID: data.matchID)!
+    return LeagueHeros.getMatchSchedule(matchID: data.matchID)!
 }

@@ -6,7 +6,7 @@ import LeagueHeros from "../../../contracts/LeagueHeros.cdc"
 // Returns: [LeagueHeros.Play]
 // array of all plays created for Topshot
 
-pub fun main(): [LeagueHeros.Play] {
+pub fun main(): Int {
 
-    return LeagueHeros.getAllPlays()
+    return LeagueHeros.getAllPlays().length
 }

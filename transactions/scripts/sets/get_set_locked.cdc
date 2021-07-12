@@ -1,4 +1,4 @@
-import League from 0xNFTADDRESS
+import LeagueHeros from "../../../contracts/LeagueHeros.cdc"
 
 // This script returns a boolean indicating if the specified match is locked
 // meaning new plays cannot be added to it
@@ -12,7 +12,7 @@ import League from 0xNFTADDRESS
 
 pub fun main(matchID: UInt32): Bool {
 
-    let isLocked = League.isMatchLocked(matchID: matchID)
+    let isLocked = LeagueHeros.isMatchLocked(matchID: matchID)
         ?? panic("Could not find the specified match")
 
     return isLocked

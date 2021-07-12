@@ -8,7 +8,7 @@ const (
 	scriptsPath = "../../../transactions/scripts/"
 
 	// Topshot contract scripts
-	currentSeriesFilename = "get_currentSeries.cdc"
+	currentSeriesFilename = "get_currentSchedule.cdc"
 	totalSupplyFilename   = "get_totalSupply.cdc"
 
 	// Play related scripts
@@ -35,7 +35,7 @@ const (
 	momentPlayIDFilename        = "collections/get_moment_playID.cdc"
 	momentSetIDFilename         = "collections/get_moment_setID.cdc"
 	metadataFilename            = "collections/get_metadata.cdc"
-	momentSerialNumFilename     = "collections/get_moment_serialNum.cdc"
+	momentSerialNumFilename     = "collections/get_moment_schedule.cdc"
 	momentSetNameFilename       = "collections/get_moment_setName.cdc"
 	getSetPlaysAreOwnedFilename = "collections/get_setplays_are_owned.cdc"
 )

@@ -1,4 +1,4 @@
-import League from 0xNFTADDRESS
+import LeagueHeros from "../../../contracts/LeagueHeros.cdc"
 
 // This script returns an array of the matchIDs
 // that have the specified name
@@ -12,7 +12,7 @@ import League from 0xNFTADDRESS
 
 pub fun main(matchName: String): [UInt32] {
 
-    let ids = League.getMatchIDsByName(matchName: matchName)
+    let ids = LeagueHeros.getMatchIDsByName(matchName: matchName)
         ?? panic("Could not find the specified match name")
 
     return ids

@@ -11,7 +11,7 @@ const (
 	placeholderFungibleTokenAddress   = "0xFUNGIBLETOKENADDRESS"
 	placeholderFlowTokenAddress       = "0xFLOWTOKENADDRESS"
 	placeholderNFTAddress             = "0xNFTADDRESS"
-	placeholderTopShotAddress         = "0xTOPSHOTADDRESS"
+	placeholderTopShotAddress         = "0xNFTADDRESS"
 	placeholderTopShotMarketAddress   = "0xMARKETADDRESS"
 	placeholderTopShotMarketV2Address = "0xMARKETV2ADDRESS"
 	placeholderShardedAddress         = "0xSHARDEDADDRESS"
@@ -21,17 +21,14 @@ const (
 )
 
 type Environment struct {
-	Network                string
-	FungibleTokenAddress   string
-	FlowTokenAddress       string
-	NFTAddress             string
-	TopShotAddress         string
-	TopShotMarketAddress   string
-	TopShotMarketV2Address string
-	ShardedAddress         string
-	AdminReceiverAddress   string
-	DUCAddress             string
-	ForwardingAddress      string
+	Network              string
+	FungibleTokenAddress string
+	FlowTokenAddress     string
+	NFTAddress           string
+	leagueherosAddress   string
+	AdminReceiverAddress string
+	DUCAddress           string
+	ForwardingAddress    string
 }
 
 func uint32ToCadenceArr(nums []uint32) []byte {
@@ -78,25 +75,7 @@ func replaceAddresses(code string, env Environment) string {
 	code = strings.ReplaceAll(
 		code,
 		placeholderTopShotAddress,
-		withHexPrefix(env.TopShotAddress),
-	)
-
-	code = strings.ReplaceAll(
-		code,
-		placeholderTopShotMarketAddress,
-		withHexPrefix(env.TopShotMarketAddress),
-	)
-
-	code = strings.ReplaceAll(
-		code,
-		placeholderTopShotMarketV2Address,
-		withHexPrefix(env.TopShotMarketV2Address),
-	)
-
-	code = strings.ReplaceAll(
-		code,
-		placeholderShardedAddress,
-		withHexPrefix(env.ShardedAddress),
+		withHexPrefix(env.leagueherosAddress),
 	)
 
 	code = strings.ReplaceAll(

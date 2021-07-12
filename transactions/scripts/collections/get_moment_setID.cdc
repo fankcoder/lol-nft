@@ -1,4 +1,4 @@
-import League from 0xNFTADDRESS
+import LeagueHeros from "../../../contracts/LeagueHeros.cdc"
 
 // This script gets the matchID associated with a moment
 // in a collection by getting a reference to the moment
@@ -16,7 +16,7 @@ pub fun main(account: Address, id: UInt64): UInt32 {
 
     // borrow a public reference to the owner's moment collection 
     let collectionRef = getAccount(account).getCapability(/public/FilmCollection)
-        .borrow<&{League.FilmCollectionPublic}>()
+        .borrow<&{LeagueHeros.FilmCollectionPublic}>()
         ?? panic("Could not get public moment collection reference")
 
     // borrow a reference to the specified moment in the collection

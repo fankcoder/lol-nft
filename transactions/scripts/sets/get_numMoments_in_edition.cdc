@@ -1,4 +1,4 @@
-import League from 0xNFTADDRESS
+import LeagueHeros from "../../../contracts/LeagueHeros.cdc"
 
 // This script returns the number of specified moments that have been
 // minted for the specified edition
@@ -13,7 +13,7 @@ import League from 0xNFTADDRESS
 
 pub fun main(matchID: UInt32, playID: UInt32): UInt32 {
 
-    let numFilms = League.getNumFilmsInEdition(matchID: matchID, playID: playID)
+    let numFilms = LeagueHeros.getNumFilmsInEdition(matchID: matchID, playID: playID)
         ?? panic("Could not find the specified edition")
 
     return numFilms

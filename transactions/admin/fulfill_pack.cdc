@@ -1,6 +1,6 @@
 import NonFungibleToken from 0xNFTADDRESS
-import League from 0xNFTADDRESS
-import LeagueShardedCollection from 0xSHARDEDADDRESS
+import LeagueHeros from "../../contracts/LeagueHeros.cdc"
+import LeagueHerosShardedCollection from 0xSHARDEDADDRESS
 
 // This transaction is what Top Shot uses to send the films in a "pack" to
 // a user's collection
@@ -19,18 +19,18 @@ transaction(recipientAddr: Address, filmIDs: [UInt64]) {
 
         // borrow a reference to the recipient's film collection
         let receiverRef = recipient.getCapability(/public/FilmCollection)
-            .borrow<&{League.FilmCollectionPublic}>()
+            .borrow<&{LeagueHeros.FilmCollectionPublic}>()
             ?? panic("Could not borrow reference to receiver's collection")
 
         
 
         // borrow a reference to the owner's film collection
-        if let collection = acct.borrow<&LeagueShardedCollection.ShardedCollection>(from: /storage/ShardedFilmCollection) {
+        if let collection = acct.borrow<&LeagueHerosShardedCollection.ShardedCollection>(from: /storage/ShardedFilmCollection) {
             
             receiverRef.batchDeposit(tokens: <-collection.batchWithdraw(ids: filmIDs))
         } else {
 
-            let collection = acct.borrow<&League.Collection>(from: /storage/FilmCollection)!
+            let collection = acct.borrow<&LeagueHeros.Collection>(from: /storage/FilmCollection)!
 
             // Deposit the pack of films to the recipient's collection
             receiverRef.batchDeposit(tokens: <-collection.batchWithdraw(ids: filmIDs))

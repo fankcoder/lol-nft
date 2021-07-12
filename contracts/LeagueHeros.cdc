@@ -1,4 +1,4 @@
-import NonFungibleToken from 0xNFTADDRESS
+import NonFungibleToken from "./NonFungibleToken.cdc"
 
 pub contract LeagueHeros: NonFungibleToken {
     // Emitted when the LeagueHeros contract is created
@@ -756,7 +756,7 @@ pub contract LeagueHeros: NonFungibleToken {
     //
     // Returns: Boolean indicating if the edition is retired or not
     pub fun isEditionRetired(matchID: UInt32, playID: UInt32): Bool? {
-        // Don't force a revert if the match or play ID is invalid
+        // // Don't force a revert if the match or play ID is invalid
         // Remove the match from the dictionary to get its field
         if let matchToRead <- LeagueHeros.matchs.remove(key: matchID) {
 

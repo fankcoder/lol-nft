@@ -1,4 +1,4 @@
-import League from 0xNFTADDRESS
+import LeagueHeros from "../../../contracts/LeagueHeros.cdc"
 
 // This script gets the matchName of a match with specified matchID
 
@@ -11,7 +11,7 @@ import League from 0xNFTADDRESS
 
 pub fun main(matchID: UInt32): String {
 
-    let name = League.getMatchName(matchID: matchID)
+    let name = LeagueHeros.getMatchName(matchID: matchID)
         ?? panic("Could not find the specified match")
         
     return name

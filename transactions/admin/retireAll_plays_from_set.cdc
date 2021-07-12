@@ -1,4 +1,4 @@
-import League from 0xNFTADDRESS
+import LeagueHeros from "../../contracts/LeagueHeros.cdc"
 
 // This transaction is for retiring all plays from a match, which
 // makes it so that films can no longer be minted
@@ -9,12 +9,12 @@ import League from 0xNFTADDRESS
 // matchID: the ID of the match to be retired entirely
 
 transaction(matchID: UInt32) {
-    let adminRef: &League.Admin
+    let adminRef: &LeagueHeros.Admin
 
     prepare(acct: AuthAccount) {
 
         // borrow a reference to the Admin resource in storage
-        self.adminRef = acct.borrow<&League.Admin>(from: /storage/LeagueAdmin)
+        self.adminRef = acct.borrow<&LeagueHeros.Admin>(from: /storage/LeagueHerosAdmin)
             ?? panic("No admin resource in storage")
     }
 

@@ -1,4 +1,4 @@
-import League from 0xNFTADDRESS
+import LeagueHeros from "../../contracts/LeagueHeros.cdc"
 
 // This transaction is how a Top Shot admin adds a created play to a match
 
@@ -10,12 +10,12 @@ import League from 0xNFTADDRESS
 transaction(matchID: UInt32, playID: UInt32) {
 
     // Local variable for the topshot Admin object
-    let adminRef: &League.Admin
+    let adminRef: &LeagueHeros.Admin
 
     prepare(acct: AuthAccount) {
 
         // borrow a reference to the Admin resource in storage
-        self.adminRef = acct.borrow<&League.Admin>(from: /storage/LeagueAdmin)
+        self.adminRef = acct.borrow<&LeagueHeros.Admin>(from: /storage/LeagueHerosAdmin)
             ?? panic("Could not borrow a reference to the Admin resource")
     }
 
@@ -30,7 +30,7 @@ transaction(matchID: UInt32, playID: UInt32) {
 
     post {
 
-        League.getPlaysInMatch(matchID: matchID)!.contains(playID):
+        LeagueHeros.getPlaysInMatch(matchID: matchID)!.contains(playID):
             "match does not contain playID"
     }
 }

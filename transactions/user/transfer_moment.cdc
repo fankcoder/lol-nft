@@ -1,11 +1,11 @@
-import NonFungibleToken from 0xNFTADDRESS
-import League from 0xNFTADDRESS
+import NonFungibleToken from "../../contracts/NonFungibleToken.cdc"
+import LeagueHeros from "../../contracts/LeagueHeros.cdc"
 
 // This transaction transfers a film to a recipient
 
 // This transaction is how a topshot user would transfer a film
 // from their account to another account
-// The recipient must have a League Collection object stored
+// The recipient must have a LeagueHeros Collection object stored
 // and a public FilmCollectionPublic capability stored at
 // `/public/FilmCollection`
 
@@ -22,7 +22,7 @@ transaction(recipient: Address, withdrawID: UInt64) {
     prepare(acct: AuthAccount) {
 
         // borrow a reference to the owner's collection
-        let collectionRef = acct.borrow<&League.Collection>(from: /storage/FilmCollection)
+        let collectionRef = acct.borrow<&LeagueHeros.Collection>(from: /storage/FilmCollection)
             ?? panic("Could not borrow a reference to the stored Film collection")
         
         // withdraw the NFT
@@ -35,7 +35,7 @@ transaction(recipient: Address, withdrawID: UInt64) {
         let recipient = getAccount(recipient)
 
         // get the Collection reference for the receiver
-        let receiverRef = recipient.getCapability(/public/FilmCollection).borrow<&{League.FilmCollectionPublic}>()!
+        let receiverRef = recipient.getCapability(/public/FilmCollection).borrow<&{LeagueHeros.FilmCollectionPublic}>()!
 
         // deposit the NFT in the receivers collection
         receiverRef.deposit(token: <-self.transferToken)

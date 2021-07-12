@@ -1,4 +1,4 @@
-import League from 0xNFTADDRESS
+import LeagueHeros from "../../../contracts/LeagueHeros.cdc"
 
 // This script gets the serial number of a moment
 // by borrowing a reference to the moment 
@@ -15,7 +15,7 @@ import League from 0xNFTADDRESS
 pub fun main(account: Address, id: UInt64): String {
 
     let collectionRef = getAccount(account).getCapability(/public/FilmCollection)
-        .borrow<&{League.FilmCollectionPublic}>()
+        .borrow<&{LeagueHeros.FilmCollectionPublic}>()
         ?? panic("Could not get public moment collection reference")
 
     let token = collectionRef.borrowFilm(id: id)

@@ -1,4 +1,4 @@
-import League from 0xNFTADDRESS
+import LeagueHeros from "../../contracts/LeagueHeros.cdc"
 
 // This transaction is what an admin would use to mint a single new film
 // and deposit it in a user's collection
@@ -11,11 +11,11 @@ import League from 0xNFTADDRESS
 
 transaction(matchID: UInt32, playID: UInt32, recipientAddr: Address, ipfs:String) {
     // local variable for the admin reference
-    let adminRef: &League.Admin
+    let adminRef: &LeagueHeros.Admin
 
     prepare(acct: AuthAccount) {
         // borrow a reference to the Admin resource in storage
-        self.adminRef = acct.borrow<&League.Admin>(from: /storage/LeagueAdmin)!
+        self.adminRef = acct.borrow<&LeagueHeros.Admin>(from: /storage/LeagueHerosAdmin)!
     }
 
     execute {
@@ -29,7 +29,7 @@ transaction(matchID: UInt32, playID: UInt32, recipientAddr: Address, ipfs:String
         let recipient = getAccount(recipientAddr)
 
         // get the Collection reference for the receiver
-        let receiverRef = recipient.getCapability(/public/FilmCollection).borrow<&{League.FilmCollectionPublic}>()
+        let receiverRef = recipient.getCapability(/public/FilmCollection).borrow<&{LeagueHeros.FilmCollectionPublic}>()
             ?? panic("Cannot borrow a reference to the recipient's film collection")
 
         // deposit the NFT in the receivers collection

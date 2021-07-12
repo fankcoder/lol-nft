@@ -1,4 +1,4 @@
-import League from 0xNFTADDRESS
+import LeagueHeros from "../../../contracts/LeagueHeros.cdc"
 
 // This script returns an array of the play IDs that are
 // in the specified match
@@ -12,7 +12,7 @@ import League from 0xNFTADDRESS
 
 pub fun main(matchID: UInt32): [UInt32] {
 
-    let plays = League.getPlaysInMatch(matchID: matchID)!
+    let plays = LeagueHeros.getPlaysInMatch(matchID: matchID)!
 
     return plays
 }

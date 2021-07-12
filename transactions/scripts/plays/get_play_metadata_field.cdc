@@ -1,7 +1,7 @@
-import League from 0xNFTADDRESS
+import LeagueHeros from "../../../contracts/LeagueHeros.cdc"
 
 // This script returns the value for the specified metadata field
-// associated with a play in the League smart contract
+// associated with a play in the LeagueHeros smart contract
 
 // Parameters:
 //
@@ -13,7 +13,7 @@ import League from 0xNFTADDRESS
 
 pub fun main(playID: UInt32, field: String): String {
 
-    let field = League.getPlayMetaDataByField(playID: playID, field: field) ?? panic("Play doesn't exist")
+    let field = LeagueHeros.getPlayMetaDataByField(playID: playID, field: field) ?? panic("Play doesn't exist")
 
     log(field)
 

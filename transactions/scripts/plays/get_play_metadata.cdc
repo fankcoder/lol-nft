@@ -1,7 +1,7 @@
-import League from 0xNFTADDRESS
+import LeagueHeros from "../../../contracts/LeagueHeros.cdc"
 
 // This script returns the full metadata associated with a play
-// in the League smart contract
+// in the LeagueHeros smart contract
 
 // Parameters:
 //
@@ -13,7 +13,7 @@ import League from 0xNFTADDRESS
 
 pub fun main(playID: UInt32): {String:String} {
 
-    let metadata = League.getPlayMetaData(playID: playID) ?? panic("Play doesn't exist")
+    let metadata = LeagueHeros.getPlayMetaData(playID: playID) ?? panic("Play doesn't exist")
 
     log(metadata)
 

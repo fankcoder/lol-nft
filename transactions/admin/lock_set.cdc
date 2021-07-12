@@ -1,4 +1,4 @@
-import League from 0xNFTADDRESS
+import LeagueHeros from "../../contracts/LeagueHeros.cdc"
 
 // This transaction locks a match so that new plays can no longer be added to it
 
@@ -9,11 +9,11 @@ import League from 0xNFTADDRESS
 transaction(matchID: UInt32) {
 
     // local variable for the admin resource
-    let adminRef: &League.Admin
+    let adminRef: &LeagueHeros.Admin
 
     prepare(acct: AuthAccount) {
         // borrow a reference to the admin resource
-        self.adminRef = acct.borrow<&League.Admin>(from: /storage/LeagueAdmin)
+        self.adminRef = acct.borrow<&LeagueHeros.Admin>(from: /storage/LeagueHerosAdmin)
             ?? panic("No admin resource in storage")
     }
 
@@ -27,7 +27,7 @@ transaction(matchID: UInt32) {
 
     post {
         
-        League.isMatchLocked(matchID: matchID)!:
+        LeagueHeros.isMatchLocked(matchID: matchID)!:
             "Match did not lock"
     }
 }

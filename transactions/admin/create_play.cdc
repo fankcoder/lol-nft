@@ -1,4 +1,4 @@
-import League from 0xNFTADDRESS
+import LeagueHeros from "../../contracts/LeagueHeros.cdc"
 
 // This transaction creates a new play struct 
 // and stores it in the Top Shot smart contract
@@ -12,14 +12,14 @@ import League from 0xNFTADDRESS
 transaction(metadata: {String: String}) {
 
     // Local variable for the topshot Admin object
-    let adminRef: &League.Admin
+    let adminRef: &LeagueHeros.Admin
     let currPlayID: UInt32
 
     prepare(acct: AuthAccount) {
 
         // borrow a reference to the admin resource
-        self.currPlayID = League.nextPlayID;
-        self.adminRef = acct.borrow<&League.Admin>(from: /storage/LeagueAdmin)
+        self.currPlayID = LeagueHeros.nextPlayID;
+        self.adminRef = acct.borrow<&LeagueHeros.Admin>(from: /storage/LeagueHerosAdmin)
             ?? panic("No admin resource in storage")
     }
 
@@ -31,7 +31,7 @@ transaction(metadata: {String: String}) {
 
     post {
         
-        League.getPlayMetaData(playID: self.currPlayID) != nil:
+        LeagueHeros.getPlayMetaData(playID: self.currPlayID) != nil:
             "playID doesnt exist"
     }
 }

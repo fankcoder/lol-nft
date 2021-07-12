@@ -1,8 +1,8 @@
-import League from 0xNFTADDRESS
+import LeagueHeros from "../../../contracts/LeagueHeros.cdc"
 
 // This script gets the metadata associated with a moment
 // in a collection by looking up its playID and then searching
-// for that play's metadata in the League contract
+// for that play's metadata in the LeagueHeros contract
 
 // Parameters:
 //
@@ -18,7 +18,7 @@ pub fun main(account: Address, id: UInt64): {String: String} {
     // get the public capability for the owner's moment collection
     // and borrow a reference to it
     let collectionRef = getAccount(account).getCapability(/public/FilmCollection)
-        .borrow<&{League.FilmCollectionPublic}>()
+        .borrow<&{LeagueHeros.FilmCollectionPublic}>()
         ?? panic("Could not get public moment collection reference")
 
     // Borrow a reference to the specified moment
@@ -30,7 +30,7 @@ pub fun main(account: Address, id: UInt64): {String: String} {
 
     // Use the moment's play ID 
     // to get all the metadata associated with that play
-    let metadata = League.getPlayMetaData(playID: data.playID) ?? panic("Play doesn't exist")
+    let metadata = LeagueHeros.getPlayMetaData(playID: data.playID) ?? panic("Play doesn't exist")
 
     log(metadata)
 
