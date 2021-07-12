@@ -1,740 +1,574 @@
 package test
 
 import (
-	"strings"
+	"regexp"
 	"testing"
-
-	"github.com/fankcoder/lol-nft/lib/go/templates"
 
 	"github.com/onflow/cadence"
 	jsoncdc "github.com/onflow/cadence/encoding/json"
-	"github.com/onflow/flow-go-sdk"
+	emulator "github.com/onflow/flow-emulator"
+	sdk "github.com/onflow/flow-go-sdk"
 	"github.com/onflow/flow-go-sdk/crypto"
 	sdktemplates "github.com/onflow/flow-go-sdk/templates"
 	"github.com/onflow/flow-go-sdk/test"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
+
+	"github.com/onflow/flow-go-sdk"
+	nft_contracts "github.com/onflow/flow-nft/lib/go/contracts"
 )
 
 const (
-	NonFungibleTokenContractsBaseURL = "https://raw.githubusercontent.com/onflow/flow-nft/master/contracts/"
-	NonFungibleTokenInterfaceFile    = "NonFungibleToken.cdc"
-	TransactionsRootPath             = "../../transactions/admin"
-	ScriptsRootPath                  = "../../transactions/scripts/"
+	TransactionsRootPath  = "../../transactions"
+	leagueScriptsRootPath = "../../transactions/scripts"
 
-	LeagueHerosContractPath  = "../../contracts/LeagueHeros.cdc"
-	emulatorFTAddress        = "ee82856bf20e2aa6"
-	emulatorFlowTokenAddress = "0ae53cb6e3f42a79"
+	LeagueHerosContractPath = "../../contracts/LeagueHeros.cdc"
+	SetupAccountPath        = TransactionsRootPath + "/user/setup_account.cdc"
+	CreatePlayPath          = TransactionsRootPath + "/admin/create_play.cdc"
+	CreateSetPath           = TransactionsRootPath + "/admin/create_set.cdc"
+	AddPlayPath             = TransactionsRootPath + "/admin/add_play_to_set.cdc"
+	MintPath                = TransactionsRootPath + "/admin/mint_moment.cdc"
+	LockSetPath             = TransactionsRootPath + "/admin/lock_set.cdc"
+	RetirePlayALLPath       = TransactionsRootPath + "/admin/retire_all.cdc"
+	StartNewSchedulePath    = TransactionsRootPath + "/admin/start_new_schedule.cdc"
+	TransferPath            = TransactionsRootPath + "/user/transfer_moment.cdc"
+
+	InspectSupplyPath        = leagueScriptsRootPath + "/get_totalSupply.cdc"
+	InspectCollectionLenPath = leagueScriptsRootPath + "/collections/get_collection_length.cdc"
+	GetAllPlaysLengthPath    = leagueScriptsRootPath + "/plays/get_all_plays_length.cdc"
+	GetAllPlaysPath          = leagueScriptsRootPath + "/plays/get_all_plays.cdc"
+	GetNextPlayIDPath        = leagueScriptsRootPath + "/plays/get_nextPlayID.cdc"
+	GetPlayMetadataPath      = leagueScriptsRootPath + "/plays/get_play_metadata.cdc"
+	GetSetNamePath           = leagueScriptsRootPath + "/sets/get_setName.cdc"
+	GetPlaysInSetPath        = leagueScriptsRootPath + "/sets/get_plays_in_set.cdc"
+	GetCurrentSchedulePath   = leagueScriptsRootPath + "/get_currentSchedule.cdc"
+	GetEditionRetiredPath    = leagueScriptsRootPath + "/sets/get_edition_retired.cdc"
+
+	typeID = 1000
 )
 
-// This test is for testing the deployment the LeagueHeros smart contracts
-func TestNFTDeployment(t *testing.T) {
-	b := newBlockchain()
+func DeployContracts(b *emulator.Blockchain, t *testing.T) (flow.Address, flow.Address, crypto.Signer) {
+	accountKeys := test.AccountKeyGenerator()
 
-	// Should be able to deploy the NFT contract
-	// as a new account with no keys.
-	nftCode, _ := DownloadFile(NonFungibleTokenContractsBaseURL + NonFungibleTokenInterfaceFile)
-	nftAddr, err := b.CreateAccount(nil, []sdktemplates.Contract{
-		{
-			Name:   "NonFungibleToken",
-			Source: string(nftCode),
+	// should be able to deploy a contract as a new account with no keys
+	nftCode := loadNonFungibleToken()
+	nftAddr, err := b.CreateAccount(
+		nil,
+		[]sdktemplates.Contract{
+			{
+				Name:   "NonFungibleToken",
+				Source: string(nftCode),
+			},
 		},
-	})
-	if !assert.NoError(t, err) {
-		t.Log(err.Error())
-	}
+	)
+	require.NoError(t, err)
+
 	_, err = b.CommitBlock()
 	assert.NoError(t, err)
 
-	// Should be able to deploy the LeagueHeros contract
-	// as a new account with no keys.
-	nftCode1, _ := DownloadFile("https://raw.githubusercontent.com/fankcoder/lol-nft/master/contracts/LeagueHeros.cdc")
-	c := []byte(nftCode1)
-	s2 := string(c)
-	s2 = strings.ReplaceAll(s2, "NFTADDRESS", nftAddr.String())
-	_, err = b.CreateAccount(nil, []sdktemplates.Contract{
-		{
-			Name:   "LeagueHeros",
-			Source: string(s2),
+	// should be able to deploy a contract as a new account with one key
+	// leagueAccountKey, leagueSigner := accountKeys.NewWithSigner()
+	leagueAccountKey, leagueSigner := accountKeys.NewWithSigner()
+	leagueCode := loadLeagueHeros(nftAddr.String())
+	// leagueCode := loadleague(nftAddr.String())
+	// leagueAddr, err := b.CreateAccount(
+	leagueAddr, err := b.CreateAccount(
+		[]*flow.AccountKey{leagueAccountKey},
+		[]sdktemplates.Contract{
+			{
+				Name:   "LeagueHeros",
+				Source: string(leagueCode),
+			},
 		},
-	})
-	if !assert.NoError(t, err) {
-		t.Log(err.Error())
-	}
+	)
+	assert.NoError(t, err)
+
 	_, err = b.CommitBlock()
 	assert.NoError(t, err)
+
+	// simplify the workflow by having the contract address also be our initial test collection
+	leagueSetupAccount(t, b, leagueAddr, leagueSigner, nftAddr, leagueAddr)
+
+	return nftAddr, leagueAddr, leagueSigner
 }
 
-// This test tests the pure functionality of the smart contract
-func TestMintNFTs(t *testing.T) {
-	b := newBlockchain()
+func leagueSetupAccount(
+	t *testing.T, b *emulator.Blockchain,
+	userAddress sdk.Address, userSigner crypto.Signer, nftAddr sdk.Address, leagueAddr sdk.Address,
+) {
+	tx := flow.NewTransaction().
+		SetScript(GenerateSetupAccountScript(nftAddr.String(), leagueAddr.String())).
+		SetGasLimit(100).
+		SetProposalKey(b.ServiceKey().Address, b.ServiceKey().Index, b.ServiceKey().SequenceNumber).
+		SetPayer(b.ServiceKey().Address).
+		AddAuthorizer(userAddress)
 
-	accountKeys := test.AccountKeyGenerator()
-
-	env := templates.Environment{
-		FungibleTokenAddress: emulatorFTAddress,
-		FlowTokenAddress:     emulatorFlowTokenAddress,
-	}
-
-	// Should be able to deploy a contract as a new account with no keys.
-	nftCode, _ := DownloadFile(NonFungibleTokenContractsBaseURL + NonFungibleTokenInterfaceFile)
-	nftAddr, _ := b.CreateAccount(nil, []sdktemplates.Contract{
-		{
-			Name:   "NonFungibleToken",
-			Source: string(nftCode),
-		},
-	})
-
-	env.NFTAddress = nftAddr.String()
-
-	// Deploy the LeagueHeros contract
-	LeagueHerosCode, _ := DownloadFile("https://raw.githubusercontent.com/fankcoder/lol-nft/master/contracts/LeagueHeros.cdc")
-	c := []byte(LeagueHerosCode)
-	s2 := string(c)
-	leagueherosCode := strings.ReplaceAll(s2, "NFTADDRESS", nftAddr.String())
-	leagueherosAccountKey, leagueherosSigner := accountKeys.NewWithSigner()
-	leagueherosAddr, _ := b.CreateAccount([]*flow.AccountKey{leagueherosAccountKey}, []sdktemplates.Contract{
-		{
-			Name:   "leagueheros",
-			Source: string(leagueherosCode),
-		},
-	})
-
-	// env.leagueherosAddress = leagueherosAddr.String()
-
-	// Check that that main contract fields were initialized correctly
-	result := executeScriptAndCheck(t, b, templates.GenerateGetSeriesScript(env), nil)
-	assert.Equal(t, cadence.NewUInt32(0), result)
-
-	result = executeScriptAndCheck(t, b, templates.GenerateGetNextPlayIDScript(env), nil)
-	assert.Equal(t, cadence.NewUInt32(1), result)
-
-	result = executeScriptAndCheck(t, b, templates.GenerateGetNextSetIDScript(env), nil)
-	assert.Equal(t, cadence.NewUInt32(1), result)
-
-	result = executeScriptAndCheck(t, b, templates.GenerateGetSupplyScript(env), nil)
-	assert.Equal(t, cadence.NewUInt64(0), result)
-
-	// Create a new user account
-	joshAccountKey, joshSigner := accountKeys.NewWithSigner()
-	joshAddress, _ := b.CreateAccount([]*flow.AccountKey{joshAccountKey}, nil)
-
-	firstName := cadence.NewString("FullName")
-	lebron := cadence.NewString("Lebron")
-	oladipo := cadence.NewString("Oladipo")
-	hayward := cadence.NewString("Hayward")
-	durant := cadence.NewString("Durant")
-
-	// Admin sends a transaction to create a play
-	t.Run("Should be able to create a new Play", func(t *testing.T) {
-		tx := createTxWithTemplateAndAuthorizer(b, templates.GenerateMintPlayScript(env), leagueherosAddr)
-
-		metadata := []cadence.KeyValuePair{{Key: firstName, Value: lebron}}
-		play := cadence.NewDictionary(metadata)
-		_ = tx.AddArgument(play)
-
-		signAndSubmit(
-			t, b, tx,
-			[]flow.Address{b.ServiceKey().Address, leagueherosAddr}, []crypto.Signer{b.ServiceKey().Signer(), leagueherosSigner},
-			false,
-		)
-	})
-
-	// Admin sends transactions to create multiple plays
-	t.Run("Should be able to create multiple new Plays", func(t *testing.T) {
-		tx := createTxWithTemplateAndAuthorizer(b, templates.GenerateMintPlayScript(env), leagueherosAddr)
-
-		metadata := []cadence.KeyValuePair{{Key: firstName, Value: oladipo}}
-		play := cadence.NewDictionary(metadata)
-		_ = tx.AddArgument(play)
-
-		signAndSubmit(
-			t, b, tx,
-			[]flow.Address{b.ServiceKey().Address, leagueherosAddr}, []crypto.Signer{b.ServiceKey().Signer(), leagueherosSigner},
-			false,
-		)
-
-		tx = createTxWithTemplateAndAuthorizer(b, templates.GenerateMintPlayScript(env), leagueherosAddr)
-
-		metadata = []cadence.KeyValuePair{{Key: firstName, Value: hayward}}
-		play = cadence.NewDictionary(metadata)
-		_ = tx.AddArgument(play)
-
-		signAndSubmit(
-			t, b, tx,
-			[]flow.Address{b.ServiceKey().Address, leagueherosAddr}, []crypto.Signer{b.ServiceKey().Signer(), leagueherosSigner},
-			false,
-		)
-
-		tx = createTxWithTemplateAndAuthorizer(b, templates.GenerateMintPlayScript(env), leagueherosAddr)
-
-		metadata = []cadence.KeyValuePair{{Key: firstName, Value: durant}}
-		play = cadence.NewDictionary(metadata)
-		_ = tx.AddArgument(play)
-
-		signAndSubmit(
-			t, b, tx,
-			[]flow.Address{b.ServiceKey().Address, leagueherosAddr}, []crypto.Signer{b.ServiceKey().Signer(), leagueherosSigner},
-			false,
-		)
-
-		// Check that the return all plays script doesn't fail
-		// and that we can return metadata about the plays
-		executeScriptAndCheck(t, b, templates.GenerateGetAllPlaysScript(env), nil)
-
-		result = executeScriptAndCheck(t, b, templates.GenerateGetPlayMetadataFieldScript(env), [][]byte{jsoncdc.MustEncode(cadence.UInt32(1)), jsoncdc.MustEncode(cadence.String("FullName"))})
-		assert.Equal(t, cadence.NewString("Lebron"), result)
-	})
-
-	// Admin creates a new Set with the name Genesis
-	t.Run("Should be able to create a new Set", func(t *testing.T) {
-		tx := createTxWithTemplateAndAuthorizer(b, templates.GenerateMintSetScript(env), leagueherosAddr)
-
-		_ = tx.AddArgument(cadence.NewString("Genesis"))
-
-		signAndSubmit(
-			t, b, tx,
-			[]flow.Address{b.ServiceKey().Address, leagueherosAddr}, []crypto.Signer{b.ServiceKey().Signer(), leagueherosSigner},
-			false,
-		)
-
-		// Check that the set name, ID, and series were initialized correctly.
-		result := executeScriptAndCheck(t, b, templates.GenerateGetSetNameScript(env), [][]byte{jsoncdc.MustEncode(cadence.UInt32(1))})
-		assert.Equal(t, cadence.NewString("Genesis"), result)
-
-		result = executeScriptAndCheck(t, b, templates.GenerateGetSetIDsByNameScript(env), [][]byte{jsoncdc.MustEncode(cadence.String("Genesis"))})
-		idsArray := cadence.NewArray([]cadence.Value{cadence.NewUInt32(1)})
-		assert.Equal(t, idsArray, result)
-
-		result = executeScriptAndCheck(t, b, templates.GenerateGetSetSeriesScript(env), [][]byte{jsoncdc.MustEncode(cadence.UInt32(1))})
-		assert.Equal(t, cadence.NewUInt32(0), result)
-	})
-
-	// Admin sends a transaction that adds play 1 to the set
-	t.Run("Should be able to add a play to a Set", func(t *testing.T) {
-		tx := createTxWithTemplateAndAuthorizer(b, templates.GenerateAddPlayToSetScript(env), leagueherosAddr)
-
-		_ = tx.AddArgument(cadence.NewUInt32(1))
-		_ = tx.AddArgument(cadence.NewUInt32(1))
-
-		signAndSubmit(
-			t, b, tx,
-			[]flow.Address{b.ServiceKey().Address, leagueherosAddr}, []crypto.Signer{b.ServiceKey().Signer(), leagueherosSigner},
-			false,
-		)
-	})
-
-	// Admin sends a transaction that adds plays 2 and 3 to the set
-	t.Run("Should be able to add multiple plays to a Set", func(t *testing.T) {
-		tx := createTxWithTemplateAndAuthorizer(b, templates.GenerateAddPlaysToSetScript(env), leagueherosAddr)
-
-		_ = tx.AddArgument(cadence.NewUInt32(1))
-
-		plays := []cadence.Value{cadence.NewUInt32(2), cadence.NewUInt32(3)}
-		_ = tx.AddArgument(cadence.NewArray(plays))
-
-		signAndSubmit(
-			t, b, tx,
-			[]flow.Address{b.ServiceKey().Address, leagueherosAddr}, []crypto.Signer{b.ServiceKey().Signer(), leagueherosSigner},
-			false,
-		)
-
-		// Make sure the plays were added correctly and the edition isn't retired or locked
-		result := executeScriptAndCheck(t, b, templates.GenerateGetPlaysInSetScript(env), [][]byte{jsoncdc.MustEncode(cadence.UInt32(1))})
-		playsArray := cadence.NewArray([]cadence.Value{cadence.NewUInt32(1), cadence.NewUInt32(2), cadence.NewUInt32(3)})
-		assert.Equal(t, playsArray, result)
-
-		result = executeScriptAndCheck(t, b, templates.GenerateGetIsEditionRetiredScript(env), [][]byte{jsoncdc.MustEncode(cadence.UInt32(1)), jsoncdc.MustEncode(cadence.UInt32(1))})
-		assert.Equal(t, cadence.NewBool(false), result)
-
-		result = executeScriptAndCheck(t, b, templates.GenerateGetIsSetLockedScript(env), [][]byte{jsoncdc.MustEncode(cadence.UInt32(1))})
-		assert.Equal(t, cadence.NewBool(false), result)
-
-	})
-
-	// Admin mints a moment that stores it in the admin's collection
-	t.Run("Should be able to mint a moment", func(t *testing.T) {
-		tx := createTxWithTemplateAndAuthorizer(b, templates.GenerateMintMomentScript(env), leagueherosAddr)
-
-		_ = tx.AddArgument(cadence.NewUInt32(1))
-		_ = tx.AddArgument(cadence.NewUInt32(1))
-		_ = tx.AddArgument(cadence.NewAddress(leagueherosAddr))
-
-		signAndSubmit(
-			t, b, tx,
-			[]flow.Address{b.ServiceKey().Address, leagueherosAddr}, []crypto.Signer{b.ServiceKey().Signer(), leagueherosSigner},
-			false,
-		)
-
-		// make sure the moment was minted correctly and is stored in the collection with the correct data
-		result := executeScriptAndCheck(t, b, templates.GenerateIsIDInCollectionScript(env), [][]byte{jsoncdc.MustEncode(cadence.Address(leagueherosAddr)), jsoncdc.MustEncode(cadence.UInt64(1))})
-		assert.Equal(t, cadence.NewBool(true), result)
-
-		result = executeScriptAndCheck(t, b, templates.GenerateGetCollectionIDsScript(env), [][]byte{jsoncdc.MustEncode(cadence.Address(leagueherosAddr))})
-		idsArray := cadence.NewArray([]cadence.Value{cadence.NewUInt64(1)})
-		assert.Equal(t, idsArray, result)
-
-		result = executeScriptAndCheck(t, b, templates.GenerateGetMomentSetScript(env), [][]byte{jsoncdc.MustEncode(cadence.Address(leagueherosAddr)), jsoncdc.MustEncode(cadence.UInt64(1))})
-		assert.Equal(t, cadence.NewUInt32(1), result)
-	})
-
-	// Admin sends a transaction that locks the set
-	t.Run("Should be able to lock a set which stops plays from being added", func(t *testing.T) {
-		tx := createTxWithTemplateAndAuthorizer(b, templates.GenerateLockSetScript(env), leagueherosAddr)
-
-		_ = tx.AddArgument(cadence.NewUInt32(1))
-
-		signAndSubmit(
-			t, b, tx,
-			[]flow.Address{b.ServiceKey().Address, leagueherosAddr}, []crypto.Signer{b.ServiceKey().Signer(), leagueherosSigner},
-			false,
-		)
-
-		// This should fail because the set is locked
-		tx = createTxWithTemplateAndAuthorizer(b, templates.GenerateAddPlayToSetScript(env), leagueherosAddr)
-
-		_ = tx.AddArgument(cadence.NewUInt32(1))
-		_ = tx.AddArgument(cadence.NewUInt32(4))
-
-		signAndSubmit(
-			t, b, tx,
-			[]flow.Address{b.ServiceKey().Address, leagueherosAddr}, []crypto.Signer{b.ServiceKey().Signer(), leagueherosSigner},
-			true,
-		)
-
-		// Script should return that the set is locked
-		result := executeScriptAndCheck(t, b, templates.GenerateGetIsSetLockedScript(env), [][]byte{jsoncdc.MustEncode(cadence.UInt32(1))})
-		assert.Equal(t, cadence.NewBool(true), result)
-	})
-
-	// Admin sends a transaction that mints a batch of moments
-	t.Run("Should be able to mint a batch of moments", func(t *testing.T) {
-		tx := createTxWithTemplateAndAuthorizer(b, templates.GenerateBatchMintMomentScript(env), leagueherosAddr)
-
-		_ = tx.AddArgument(cadence.NewUInt32(1))
-		_ = tx.AddArgument(cadence.NewUInt32(3))
-		_ = tx.AddArgument(cadence.NewUInt64(5))
-		_ = tx.AddArgument(cadence.NewAddress(leagueherosAddr))
-
-		signAndSubmit(
-			t, b, tx,
-			[]flow.Address{b.ServiceKey().Address, leagueherosAddr}, []crypto.Signer{b.ServiceKey().Signer(), leagueherosSigner},
-			false,
-		)
-
-		// Ensure that the correct number of moments have been minted for each edition
-		result := executeScriptAndCheck(t, b, templates.GenerateGetNumMomentsInEditionScript(env), [][]byte{jsoncdc.MustEncode(cadence.UInt32(1)), jsoncdc.MustEncode(cadence.UInt32(1))})
-		assert.Equal(t, cadence.NewUInt32(1), result)
-
-		result = executeScriptAndCheck(t, b, templates.GenerateGetNumMomentsInEditionScript(env), [][]byte{jsoncdc.MustEncode(cadence.UInt32(1)), jsoncdc.MustEncode(cadence.UInt32(3))})
-		assert.Equal(t, cadence.NewUInt32(5), result)
-
-		result = executeScriptAndCheck(t, b, templates.GenerateIsIDInCollectionScript(env), [][]byte{jsoncdc.MustEncode(cadence.Address(leagueherosAddr)), jsoncdc.MustEncode(cadence.UInt64(1))})
-		assert.Equal(t, cadence.NewBool(true), result)
-
-		result = executeScriptAndCheck(t, b, templates.GenerateGetCollectionIDsScript(env), [][]byte{jsoncdc.MustEncode(cadence.Address(leagueherosAddr))})
-		idsArray := cadence.NewArray([]cadence.Value{cadence.NewUInt64(1), cadence.NewUInt64(2), cadence.NewUInt64(3), cadence.NewUInt64(4), cadence.NewUInt64(5), cadence.NewUInt64(6)})
-		assert.Equal(t, idsArray, result)
-
-		result = executeScriptAndCheck(t, b, templates.GenerateGetMomentSetScript(env), [][]byte{jsoncdc.MustEncode(cadence.Address(leagueherosAddr)), jsoncdc.MustEncode(cadence.UInt64(1))})
-		assert.Equal(t, cadence.NewUInt32(1), result)
-
-	})
-
-	t.Run("Should be able to mint a batch of moments and fulfill a pack", func(t *testing.T) {
-		tx := createTxWithTemplateAndAuthorizer(b, templates.GenerateBatchMintMomentScript(env), leagueherosAddr)
-
-		_ = tx.AddArgument(cadence.NewUInt32(1))
-		_ = tx.AddArgument(cadence.NewUInt32(3))
-		_ = tx.AddArgument(cadence.NewUInt64(5))
-		_ = tx.AddArgument(cadence.NewAddress(leagueherosAddr))
-
-		signAndSubmit(
-			t, b, tx,
-			[]flow.Address{b.ServiceKey().Address, leagueherosAddr}, []crypto.Signer{b.ServiceKey().Signer(), leagueherosSigner},
-			false,
-		)
-
-		tx = createTxWithTemplateAndAuthorizer(b, templates.GenerateFulfillPackScript(env), leagueherosAddr)
-
-		_ = tx.AddArgument(cadence.NewAddress(leagueherosAddr))
-
-		ids := []cadence.Value{cadence.NewUInt64(6), cadence.NewUInt64(7), cadence.NewUInt64(8)}
-		_ = tx.AddArgument(cadence.NewArray(ids))
-
-		signAndSubmit(
-			t, b, tx,
-			[]flow.Address{b.ServiceKey().Address, leagueherosAddr}, []crypto.Signer{b.ServiceKey().Signer(), leagueherosSigner},
-			false,
-		)
-
-	})
-
-	// Admin sends a transaction to retire a play
-	t.Run("Should be able to retire a Play which stops minting", func(t *testing.T) {
-		tx := createTxWithTemplateAndAuthorizer(b, templates.GenerateRetirePlayScript(env), leagueherosAddr)
-
-		_ = tx.AddArgument(cadence.NewUInt32(1))
-		_ = tx.AddArgument(cadence.NewUInt32(1))
-
-		signAndSubmit(
-			t, b, tx,
-			[]flow.Address{b.ServiceKey().Address, leagueherosAddr}, []crypto.Signer{b.ServiceKey().Signer(), leagueherosSigner},
-			false,
-		)
-
-		// Minting from this play should fail becuase it is retired
-		tx = createTxWithTemplateAndAuthorizer(b, templates.GenerateMintMomentScript(env), leagueherosAddr)
-
-		_ = tx.AddArgument(cadence.NewUInt32(1))
-		_ = tx.AddArgument(cadence.NewUInt32(1))
-		_ = tx.AddArgument(cadence.NewAddress(leagueherosAddr))
-
-		signAndSubmit(
-			t, b, tx,
-			[]flow.Address{b.ServiceKey().Address, leagueherosAddr}, []crypto.Signer{b.ServiceKey().Signer(), leagueherosSigner},
-			true,
-		)
-
-		// Make sure this edition is retired
-		result := executeScriptAndCheck(t, b, templates.GenerateGetIsEditionRetiredScript(env), [][]byte{jsoncdc.MustEncode(cadence.UInt32(1)), jsoncdc.MustEncode(cadence.UInt32(1))})
-		assert.Equal(t, cadence.NewBool(true), result)
-	})
-
-	// Admin sends a transaction that retires all the plays in a set
-	t.Run("Should be able to retire all Plays which stops minting", func(t *testing.T) {
-		tx := createTxWithTemplateAndAuthorizer(b, templates.GenerateRetireAllPlaysScript(env), leagueherosAddr)
-
-		_ = tx.AddArgument(cadence.NewUInt32(1))
-
-		signAndSubmit(
-			t, b, tx,
-			[]flow.Address{b.ServiceKey().Address, leagueherosAddr}, []crypto.Signer{b.ServiceKey().Signer(), leagueherosSigner},
-			false,
-		)
-
-		// minting should fail
-		tx = createTxWithTemplateAndAuthorizer(b, templates.GenerateMintMomentScript(env), leagueherosAddr)
-
-		_ = tx.AddArgument(cadence.NewUInt32(1))
-		_ = tx.AddArgument(cadence.NewUInt32(3))
-		_ = tx.AddArgument(cadence.NewAddress(leagueherosAddr))
-
-		signAndSubmit(
-			t, b, tx,
-			[]flow.Address{b.ServiceKey().Address, leagueherosAddr}, []crypto.Signer{b.ServiceKey().Signer(), leagueherosSigner},
-			true,
-		)
-	})
-
-	// create a new Collection for a user address
-	t.Run("Should be able to create a moment Collection", func(t *testing.T) {
-		tx := createTxWithTemplateAndAuthorizer(b, templates.GenerateSetupAccountScript(env), joshAddress)
-		signAndSubmit(
-			t, b, tx,
-			[]flow.Address{b.ServiceKey().Address, joshAddress}, []crypto.Signer{b.ServiceKey().Signer(), joshSigner},
-			false,
-		)
-	})
-
-	// Admin sends a transaction to update the current series
-	t.Run("Should be able to change the current series", func(t *testing.T) {
-		tx := createTxWithTemplateAndAuthorizer(b, templates.GenerateChangeSeriesScript(env), leagueherosAddr)
-
-		signAndSubmit(
-			t, b, tx,
-			[]flow.Address{b.ServiceKey().Address, leagueherosAddr}, []crypto.Signer{b.ServiceKey().Signer(), leagueherosSigner},
-			false,
-		)
-	})
-
-	// Make sure the contract fields are correct
-	result = executeScriptAndCheck(t, b, templates.GenerateGetSeriesScript(env), nil)
-	assert.Equal(t, cadence.NewUInt32(1), result)
-
-	result = executeScriptAndCheck(t, b, templates.GenerateGetNextPlayIDScript(env), nil)
-	assert.Equal(t, cadence.NewUInt32(5), result)
-
-	result = executeScriptAndCheck(t, b, templates.GenerateGetNextSetIDScript(env), nil)
-	assert.Equal(t, cadence.NewUInt32(2), result)
-
-	result = executeScriptAndCheck(t, b, templates.GenerateGetSupplyScript(env), nil)
-	assert.Equal(t, cadence.NewUInt64(11), result)
-
-}
-
-/*
-// This test is for ensuring that admin receiver smart contract works correctly
-func TestTransferAdmin(t *testing.T) {
-	b := newBlockchain()
-
-	accountKeys := test.AccountKeyGenerator()
-
-	env := templates.Environment{
-		FungibleTokenAddress: emulatorFTAddress,
-		FlowTokenAddress:     emulatorFlowTokenAddress,
-	}
-
-	// Should be able to deploy a contract as a new account with no keys.
-	nftCode, _ := DownloadFile(NonFungibleTokenContractsBaseURL + NonFungibleTokenInterfaceFile)
-	nftAddr, _ := b.CreateAccount(nil, []sdktemplates.Contract{
-		{
-			Name:   "NonFungibleToken",
-			Source: string(nftCode),
-		},
-	})
-
-	env.NFTAddress = nftAddr.String()
-
-	// First, deploy the leagueheros contract
-	leagueherosCode := contracts.GenerateleagueherosContract(nftAddr.String())
-	leagueherosAccountKey, leagueherosSigner := accountKeys.NewWithSigner()
-	leagueherosAddr, _ := b.CreateAccount([]*flow.AccountKey{leagueherosAccountKey}, []sdktemplates.Contract{
-		{
-			Name:   "leagueheros",
-			Source: string(leagueherosCode),
-		},
-	})
-
-	env.leagueherosAddress = leagueherosAddr.String()
-
-	shardedCollectionCode := contracts.GenerateleagueherosShardedCollectionContract(nftAddr.String(), leagueherosAddr.String())
-	shardedAddr, _ := b.CreateAccount(nil, []sdktemplates.Contract{
-		{
-			Name:   "leagueherosShardedCollection",
-			Source: string(shardedCollectionCode),
-		},
-	})
-	_, _ = b.CommitBlock()
-
-	env.ShardedAddress = shardedAddr.String()
-
-	// Should be able to deploy the admin receiver contract
-	adminReceiverCode := contracts.GenerateleagueherosAdminReceiverContract(leagueherosAddr.String(), shardedAddr.String())
-	adminAccountKey, adminSigner := accountKeys.NewWithSigner()
-	adminAddr, _ := b.CreateAccount([]*flow.AccountKey{adminAccountKey}, []sdktemplates.Contract{
-		{
-			Name:   "leagueherosAdminReceiver",
-			Source: string(adminReceiverCode),
-		},
-	})
-	b.CommitBlock()
-
-	env.AdminReceiverAddress = adminAddr.String()
-
-	firstName := cadence.NewString("FullName")
-	lebron := cadence.NewString("Lebron")
-
-	// create a new Collection
-	t.Run("Should be able to transfer an admin Capability to the receiver account", func(t *testing.T) {
-
-		tx := createTxWithTemplateAndAuthorizer(b, templates.GenerateTransferAdminScript(env), leagueherosAddr)
-
-		signAndSubmit(
-			t, b, tx,
-			[]flow.Address{b.ServiceKey().Address, leagueherosAddr}, []crypto.Signer{b.ServiceKey().Signer(), leagueherosSigner},
-			false,
-		)
-	})
-
-	// can create a new play with the new admin
-	t.Run("Should be able to create a new Play with the new Admin account", func(t *testing.T) {
-
-		tx := createTxWithTemplateAndAuthorizer(b, templates.GenerateMintPlayScript(env), adminAddr)
-
-		metadata := []cadence.KeyValuePair{{Key: firstName, Value: lebron}}
-		play := cadence.NewDictionary(metadata)
-		_ = tx.AddArgument(play)
-
-		signAndSubmit(
-			t, b, tx,
-			[]flow.Address{b.ServiceKey().Address, adminAddr}, []crypto.Signer{b.ServiceKey().Signer(), adminSigner},
-			false,
-		)
-	})
-}
-
-func TestSetPlaysOwnedByAddressScript(t *testing.T) {
-	// Setup
-	b := newBlockchain()
-
-	accountKeys := test.AccountKeyGenerator()
-
-	env := templates.Environment{
-		FungibleTokenAddress: emulatorFTAddress,
-		FlowTokenAddress:     emulatorFlowTokenAddress,
-	}
-
-	// Should be able to deploy a contract as a new account with no keys.
-	nftCode, _ := DownloadFile(NonFungibleTokenContractsBaseURL + NonFungibleTokenInterfaceFile)
-	nftAddr, _ := b.CreateAccount(nil, []sdktemplates.Contract{
-		{
-			Name:   "NonFungibleToken",
-			Source: string(nftCode),
-		},
-	})
-
-	env.NFTAddress = nftAddr.String()
-
-	// First, deploy the leagueheros contract
-	leagueherosCode := contracts.GenerateleagueherosContract(nftAddr.String())
-	leagueherosAccountKey, leagueherosSigner := accountKeys.NewWithSigner()
-	leagueherosAddr, _ := b.CreateAccount([]*flow.AccountKey{leagueherosAccountKey}, []sdktemplates.Contract{
-		{
-			Name:   "leagueheros",
-			Source: string(leagueherosCode),
-		},
-	})
-
-	env.leagueherosAddress = leagueherosAddr.String()
-
-	// Create a new user account
-	joshAccountKey, joshSigner := accountKeys.NewWithSigner()
-	joshAddress, _ := b.CreateAccount([]*flow.AccountKey{joshAccountKey}, nil)
-
-	// Create moment collection
-	tx := createTxWithTemplateAndAuthorizer(b, templates.GenerateSetupAccountScript(env), joshAddress)
 	signAndSubmit(
 		t, b, tx,
-		[]flow.Address{b.ServiceKey().Address, joshAddress}, []crypto.Signer{b.ServiceKey().Signer(), joshSigner},
+		[]flow.Address{b.ServiceKey().Address, userAddress},
+		[]crypto.Signer{b.ServiceKey().Signer(), userSigner},
 		false,
 	)
+}
 
-	firstName := cadence.NewString("FullName")
-	lebron := cadence.NewString("Lebron")
-	hayward := cadence.NewString("Hayward")
-	antetokounmpo := cadence.NewString("Antetokounmpo")
+func createPlay(
+	t *testing.T, b *emulator.Blockchain,
+	nftAddr, leagueAddr flow.Address,
+	leagueSigner crypto.Signer,
+) {
+	tx := flow.NewTransaction().
+		SetScript(GenerateScript(CreatePlayPath, nftAddr.String(), leagueAddr.String())).
+		SetGasLimit(100).
+		SetProposalKey(b.ServiceKey().Address, b.ServiceKey().Index, b.ServiceKey().SequenceNumber).
+		SetPayer(b.ServiceKey().Address).
+		AddAuthorizer(leagueAddr)
 
-	// Create plays
-	lebronPlayID := uint32(1)
-	tx = createTxWithTemplateAndAuthorizer(b, templates.GenerateMintPlayScript(env), leagueherosAddr)
-
-	metadata := []cadence.KeyValuePair{{Key: firstName, Value: lebron}}
+	nameKey := cadence.NewString("Name")
+	nameValue := cadence.NewString("Fank")
+	nameKey2 := cadence.NewString("Name")
+	nameValue2 := cadence.NewString("Lili")
+	nameKey3 := cadence.NewString("Name")
+	nameValue3 := cadence.NewString("virgil")
+	// FankPlayID := uint32(1)
+	metadata := []cadence.KeyValuePair{{Key: nameKey, Value: nameValue}}
 	play := cadence.NewDictionary(metadata)
+
 	_ = tx.AddArgument(play)
 
 	signAndSubmit(
 		t, b, tx,
-		[]flow.Address{b.ServiceKey().Address, leagueherosAddr}, []crypto.Signer{b.ServiceKey().Signer(), leagueherosSigner},
+		[]flow.Address{b.ServiceKey().Address, leagueAddr},
+		[]crypto.Signer{b.ServiceKey().Signer(), leagueSigner},
 		false,
 	)
-	haywardPlayID := uint32(2)
-	tx = createTxWithTemplateAndAuthorizer(b, templates.GenerateMintPlayScript(env), leagueherosAddr)
-
-	metadata = []cadence.KeyValuePair{{Key: firstName, Value: hayward}}
+	tx = flow.NewTransaction().
+		SetScript(GenerateScript(CreatePlayPath, nftAddr.String(), leagueAddr.String())).
+		SetGasLimit(100).
+		SetProposalKey(b.ServiceKey().Address, b.ServiceKey().Index, b.ServiceKey().SequenceNumber).
+		SetPayer(b.ServiceKey().Address).
+		AddAuthorizer(leagueAddr)
+	metadata = []cadence.KeyValuePair{{Key: nameKey2, Value: nameValue2}}
 	play = cadence.NewDictionary(metadata)
+
 	_ = tx.AddArgument(play)
 
 	signAndSubmit(
 		t, b, tx,
-		[]flow.Address{b.ServiceKey().Address, leagueherosAddr}, []crypto.Signer{b.ServiceKey().Signer(), leagueherosSigner},
+		[]flow.Address{b.ServiceKey().Address, leagueAddr},
+		[]crypto.Signer{b.ServiceKey().Signer(), leagueSigner},
 		false,
 	)
-	antetokounmpoPlayID := uint32(3)
-	tx = createTxWithTemplateAndAuthorizer(b, templates.GenerateMintPlayScript(env), leagueherosAddr)
 
-	metadata = []cadence.KeyValuePair{{Key: firstName, Value: antetokounmpo}}
+	tx = flow.NewTransaction().
+		SetScript(GenerateScript(CreatePlayPath, nftAddr.String(), leagueAddr.String())).
+		SetGasLimit(100).
+		SetProposalKey(b.ServiceKey().Address, b.ServiceKey().Index, b.ServiceKey().SequenceNumber).
+		SetPayer(b.ServiceKey().Address).
+		AddAuthorizer(leagueAddr)
+	metadata = []cadence.KeyValuePair{{Key: nameKey3, Value: nameValue3}}
 	play = cadence.NewDictionary(metadata)
+
 	_ = tx.AddArgument(play)
 
 	signAndSubmit(
 		t, b, tx,
-		[]flow.Address{b.ServiceKey().Address, leagueherosAddr}, []crypto.Signer{b.ServiceKey().Signer(), leagueherosSigner},
+		[]flow.Address{b.ServiceKey().Address, leagueAddr},
+		[]crypto.Signer{b.ServiceKey().Signer(), leagueSigner},
 		false,
 	)
 
-	// Create Set
-	genesisSetID := uint32(1)
-	tx = createTxWithTemplateAndAuthorizer(b, templates.GenerateMintSetScript(env), leagueherosAddr)
-
-	_ = tx.AddArgument(cadence.NewString("Genesis"))
-
-	signAndSubmit(
-		t, b, tx,
-		[]flow.Address{b.ServiceKey().Address, leagueherosAddr}, []crypto.Signer{b.ServiceKey().Signer(), leagueherosSigner},
-		false,
+	length := executeScriptAndCheck(
+		t,
+		b,
+		leagueGenerateScript(GetAllPlaysLengthPath, nftAddr.String(), leagueAddr.String()),
+		nil,
 	)
+	assert.EqualValues(t, cadence.NewInt(3), length)
 
-	// Add plays to Set
-	tx = createTxWithTemplateAndAuthorizer(b, templates.GenerateAddPlaysToSetScript(env), leagueherosAddr)
-
-	_ = tx.AddArgument(cadence.NewUInt32(genesisSetID))
-
-	plays := []cadence.Value{cadence.NewUInt32(lebronPlayID), cadence.NewUInt32(haywardPlayID), cadence.NewUInt32(antetokounmpoPlayID)}
-	_ = tx.AddArgument(cadence.NewArray(plays))
-
-	signAndSubmit(
-		t, b, tx,
-		[]flow.Address{b.ServiceKey().Address, leagueherosAddr}, []crypto.Signer{b.ServiceKey().Signer(), leagueherosSigner},
-		false,
-	)
-
-	// Mint two moments to joshAddress
-	tx = createTxWithTemplateAndAuthorizer(b, templates.GenerateMintMomentScript(env), leagueherosAddr)
-
-	_ = tx.AddArgument(cadence.NewUInt32(genesisSetID))
-	_ = tx.AddArgument(cadence.NewUInt32(lebronPlayID))
-	_ = tx.AddArgument(cadence.NewAddress(joshAddress))
-
-	signAndSubmit(
-		t, b, tx,
-		[]flow.Address{b.ServiceKey().Address, leagueherosAddr}, []crypto.Signer{b.ServiceKey().Signer(), leagueherosSigner},
-		false,
-	)
-	tx = createTxWithTemplateAndAuthorizer(b, templates.GenerateMintMomentScript(env), leagueherosAddr)
-
-	_ = tx.AddArgument(cadence.NewUInt32(genesisSetID))
-	_ = tx.AddArgument(cadence.NewUInt32(haywardPlayID))
-	_ = tx.AddArgument(cadence.NewAddress(joshAddress))
-	signAndSubmit(
-		t, b, tx,
-		[]flow.Address{b.ServiceKey().Address, leagueherosAddr}, []crypto.Signer{b.ServiceKey().Signer(), leagueherosSigner},
-		false,
-	)
-
-	// Mint one moment to leagueherosAddress
-	tx = createTxWithTemplateAndAuthorizer(b, templates.GenerateMintMomentScript(env), leagueherosAddr)
-
-	_ = tx.AddArgument(cadence.NewUInt32(genesisSetID))
-	_ = tx.AddArgument(cadence.NewUInt32(lebronPlayID))
-	_ = tx.AddArgument(cadence.NewAddress(leagueherosAddr))
-
-	signAndSubmit(
-		t, b, tx,
-		[]flow.Address{b.ServiceKey().Address, leagueherosAddr}, []crypto.Signer{b.ServiceKey().Signer(), leagueherosSigner},
-		false,
-	)
-
-	t.Run("Should return true if the address owns moments corresponding to each SetPlay", func(t *testing.T) {
-		script := templates.GenerateSetPlaysOwnedByAddressScript(env)
-
-		setIDs := cadence.NewArray([]cadence.Value{cadence.NewUInt32(genesisSetID), cadence.NewUInt32(genesisSetID)})
-		playIDs := cadence.NewArray([]cadence.Value{cadence.NewUInt32(lebronPlayID), cadence.NewUInt32(haywardPlayID)})
-
-		result := executeScriptAndCheck(t, b, script, [][]byte{jsoncdc.MustEncode(cadence.Address(joshAddress)), jsoncdc.MustEncode(setIDs), jsoncdc.MustEncode(playIDs)})
-
-		assert.Equal(t, cadence.NewBool(true), result)
-	})
-
-	t.Run("Should return false if the address does not own moments corresponding to each SetPlay", func(t *testing.T) {
-		script := templates.GenerateSetPlaysOwnedByAddressScript(env)
-
-		setIDs := cadence.NewArray([]cadence.Value{cadence.NewUInt32(genesisSetID), cadence.NewUInt32(genesisSetID), cadence.NewUInt32(genesisSetID)})
-		playIDs := cadence.NewArray([]cadence.Value{cadence.NewUInt32(lebronPlayID), cadence.NewUInt32(haywardPlayID), cadence.NewUInt32(antetokounmpoPlayID)})
-
-		result := executeScriptAndCheck(t, b, script, [][]byte{jsoncdc.MustEncode(cadence.Address(joshAddress)), jsoncdc.MustEncode(setIDs), jsoncdc.MustEncode(playIDs)})
-		assert.Equal(t, cadence.NewBool(false), result)
-	})
-
-	// t.Run("Should fail with mismatched Set and Play slice lengths", func(t *testing.T) {
-	// 	_, err := templates.GenerateSetPlaysOwnedByAddressScript(leagueherosAddr, joshAddress, []uint32{1, 2}, []uint32{1})
-	// 	assert.Error(t, err)
-	// 	assert.True(t, strings.Contains(err.Error(), "mismatched lengths"))
-	// })
-
-	// t.Run("Should fail with empty SetPlays", func(t *testing.T) {
-	// 	_, err := templates.GenerateSetPlaysOwnedByAddressScript(leagueherosAddr, joshAddress, []uint32{}, []uint32{})
-	// 	assert.Error(t, err)
-	// 	assert.True(t, strings.Contains(err.Error(), "no SetPlays"))
-	// })
 }
-*/
+
+func createMatch(
+	t *testing.T, b *emulator.Blockchain,
+	nftAddr, leagueAddr flow.Address,
+	leagueSigner crypto.Signer,
+) {
+	fiveKillSetID := uint32(1)
+	tx := flow.NewTransaction().
+		SetScript(GenerateScript(CreateSetPath, nftAddr.String(), leagueAddr.String())).
+		SetGasLimit(100).
+		SetProposalKey(b.ServiceKey().Address, b.ServiceKey().Index, b.ServiceKey().SequenceNumber).
+		SetPayer(b.ServiceKey().Address).
+		AddAuthorizer(leagueAddr)
+
+	_ = tx.AddArgument(cadence.NewString("FiveKill"))
+
+	signAndSubmit(
+		t, b, tx,
+		[]flow.Address{b.ServiceKey().Address, leagueAddr},
+		[]crypto.Signer{b.ServiceKey().Signer(), leagueSigner},
+		false,
+	)
+
+	setName := executeScriptAndCheck(
+		t,
+		b,
+		leagueGenerateScript(GetSetNamePath, nftAddr.String(), leagueAddr.String()),
+		[][]byte{jsoncdc.MustEncode(cadence.UInt32(fiveKillSetID))},
+	)
+	assert.EqualValues(t, cadence.NewString("FiveKill"), setName)
+}
+
+func addPlaytoMatch(
+	t *testing.T, b *emulator.Blockchain,
+	nftAddr, leagueAddr flow.Address,
+	leagueSigner crypto.Signer,
+) {
+	tx := flow.NewTransaction().
+		SetScript(GenerateScript(AddPlayPath, nftAddr.String(), leagueAddr.String())).
+		SetGasLimit(100).
+		SetProposalKey(b.ServiceKey().Address, b.ServiceKey().Index, b.ServiceKey().SequenceNumber).
+		SetPayer(b.ServiceKey().Address).
+		AddAuthorizer(leagueAddr)
+
+	_ = tx.AddArgument(cadence.NewUInt32(1))
+	_ = tx.AddArgument(cadence.NewUInt32(1))
+
+	signAndSubmit(
+		t, b, tx,
+		[]flow.Address{b.ServiceKey().Address, leagueAddr},
+		[]crypto.Signer{b.ServiceKey().Signer(), leagueSigner},
+		false,
+	)
+
+	plays := executeScriptAndCheck(
+		t,
+		b,
+		leagueGenerateScript(GetPlaysInSetPath, nftAddr.String(), leagueAddr.String()),
+		[][]byte{jsoncdc.MustEncode(cadence.UInt32(1))},
+	)
+	assert.EqualValues(t, cadence.NewArray([]cadence.Value{cadence.NewUInt32(1)}), plays)
+}
+
+func retirePlay(
+	t *testing.T, b *emulator.Blockchain,
+	nftAddr, leagueAddr flow.Address,
+	leagueSigner crypto.Signer,
+) {
+
+	// check play in match
+	play := executeScriptAndCheck(
+		t,
+		b,
+		leagueGenerateScript(GetPlaysInSetPath, nftAddr.String(), leagueAddr.String()),
+		[][]byte{jsoncdc.MustEncode(cadence.UInt32(1))},
+	)
+	assert.EqualValues(t, cadence.NewArray([]cadence.Value{cadence.NewUInt32(1)}), play)
+
+	tx := flow.NewTransaction().
+		SetScript(GenerateScript(RetirePlayALLPath, nftAddr.String(), leagueAddr.String())).
+		SetGasLimit(100).
+		SetProposalKey(b.ServiceKey().Address, b.ServiceKey().Index, b.ServiceKey().SequenceNumber).
+		SetPayer(b.ServiceKey().Address).
+		AddAuthorizer(leagueAddr)
+
+	_ = tx.AddArgument(cadence.NewUInt32(1))
+	// _ = tx.AddArgument(cadence.NewUInt32(1))
+
+	signAndSubmit(
+		t, b, tx,
+		[]flow.Address{b.ServiceKey().Address, leagueAddr},
+		[]crypto.Signer{b.ServiceKey().Signer(), leagueSigner},
+		false,
+	)
+
+	isRetired := executeScriptAndCheck(
+		t,
+		b,
+		leagueGenerateScript(GetEditionRetiredPath, nftAddr.String(), leagueAddr.String()),
+		[][]byte{jsoncdc.MustEncode(cadence.UInt32(1)), jsoncdc.MustEncode(cadence.UInt32(1))},
+	)
+	assert.EqualValues(t, cadence.Bool(true), isRetired)
+}
+
+func leagueMintItem(
+	t *testing.T, b *emulator.Blockchain,
+	nftAddr, leagueAddr flow.Address,
+	leagueSigner crypto.Signer,
+) {
+	tx := flow.NewTransaction().
+		SetScript(GenerateScript(MintPath, nftAddr.String(), leagueAddr.String())).
+		SetGasLimit(100).
+		SetProposalKey(b.ServiceKey().Address, b.ServiceKey().Index, b.ServiceKey().SequenceNumber).
+		SetPayer(b.ServiceKey().Address).
+		AddAuthorizer(leagueAddr)
+
+	_ = tx.AddArgument(cadence.NewUInt32(1))
+	_ = tx.AddArgument(cadence.NewUInt32(1))
+	_ = tx.AddArgument(cadence.NewAddress(leagueAddr))
+	_ = tx.AddArgument(cadence.NewString("https://this_is_a_pic.jpg"))
+
+	signAndSubmit(
+		t, b, tx,
+		[]flow.Address{b.ServiceKey().Address, leagueAddr},
+		[]crypto.Signer{b.ServiceKey().Signer(), leagueSigner},
+		false,
+	)
+
+	total := executeScriptAndCheck(
+		t,
+		b,
+		leagueGenerateScript(InspectSupplyPath, nftAddr.String(), leagueAddr.String()),
+		nil,
+	)
+	assert.EqualValues(t, cadence.NewUInt64(1), total)
+}
+
+func leagueTransferItem(
+	t *testing.T, b *emulator.Blockchain,
+	nftAddr, leagueAddr flow.Address, leagueSigner crypto.Signer,
+	typeID uint64, recipientAddr flow.Address, shouldFail bool,
+) {
+
+	tx := flow.NewTransaction().
+		SetScript(leagueGenerateTransferleaguecript(nftAddr.String(), leagueAddr.String())).
+		SetGasLimit(100).
+		SetProposalKey(b.ServiceKey().Address, b.ServiceKey().Index, b.ServiceKey().SequenceNumber).
+		SetPayer(b.ServiceKey().Address).
+		AddAuthorizer(leagueAddr)
+
+	_ = tx.AddArgument(cadence.NewAddress(recipientAddr))
+	_ = tx.AddArgument(cadence.NewUInt64(typeID))
+
+	signAndSubmit(
+		t, b, tx,
+		[]flow.Address{b.ServiceKey().Address, leagueAddr},
+		[]crypto.Signer{b.ServiceKey().Signer(), leagueSigner},
+		shouldFail,
+	)
+}
+
+func newSchedule(
+	t *testing.T, b *emulator.Blockchain,
+	nftAddr, leagueAddr flow.Address, leagueSigner crypto.Signer,
+) {
+
+	tx := flow.NewTransaction().
+		SetScript(GenerateScript(StartNewSchedulePath, nftAddr.String(), leagueAddr.String())).
+		SetGasLimit(100).
+		SetProposalKey(b.ServiceKey().Address, b.ServiceKey().Index, b.ServiceKey().SequenceNumber).
+		SetPayer(b.ServiceKey().Address).
+		AddAuthorizer(leagueAddr)
+
+	signAndSubmit(
+		t, b, tx,
+		[]flow.Address{b.ServiceKey().Address, leagueAddr},
+		[]crypto.Signer{b.ServiceKey().Signer(), leagueSigner},
+		false,
+	)
+
+	schedule := executeScriptAndCheck(
+		t,
+		b,
+		leagueGenerateScript(GetCurrentSchedulePath, nftAddr.String(), leagueAddr.String()),
+		nil,
+	)
+	assert.EqualValues(t, cadence.NewUInt32(1), schedule)
+}
+
+// func TestDeployContracts(t *testing.T) {
+// 	b := newEmulator()
+// 	DeployContracts(b, t)
+// }
+
+func TestCreateLeague(t *testing.T) {
+	b := newEmulator()
+
+	nftAddr, leagueAddr, leagueSigner := DeployContracts(b, t)
+
+	supply := executeScriptAndCheck(
+		t, b,
+		leagueGenerateInspectleaguesupplyScript(nftAddr.String(), leagueAddr.String()),
+		nil,
+	)
+	assert.EqualValues(t, cadence.NewUInt64(0), supply)
+
+	// assert that the account collection is empty
+	length := executeScriptAndCheck(
+		t,
+		b,
+		leagueGenerateInspectCollectionLenScript(nftAddr.String(), leagueAddr.String()),
+		[][]byte{jsoncdc.MustEncode(cadence.NewAddress(leagueAddr))},
+	)
+	assert.EqualValues(t, cadence.NewInt(0), length)
+
+	t.Run("Should be able to add a play", func(t *testing.T) {
+		createPlay(t, b, nftAddr, leagueAddr, leagueSigner)
+	})
+
+	t.Run("Should be able to add a match", func(t *testing.T) {
+		createMatch(t, b, nftAddr, leagueAddr, leagueSigner)
+	})
+
+	t.Run("Should be able to add play to match", func(t *testing.T) {
+		addPlaytoMatch(t, b, nftAddr, leagueAddr, leagueSigner)
+	})
+
+	t.Run("Should be able to mint item", func(t *testing.T) {
+		leagueMintItem(t, b, nftAddr, leagueAddr, leagueSigner)
+	})
+}
+
+func TestTransferNFT(t *testing.T) {
+	b := newEmulator()
+
+	nftAddr, leagueAddr, leagueSigner := DeployContracts(b, t)
+
+	userAddress, userSigner, _ := createAccount(t, b)
+
+	// create a new Collection for new account
+	t.Run("Should be able to create a new empty NFT Collection", func(t *testing.T) {
+		leagueSetupAccount(t, b, userAddress, userSigner, nftAddr, leagueAddr)
+
+		length := executeScriptAndCheck(
+			t,
+			b, leagueGenerateInspectCollectionLenScript(nftAddr.String(), leagueAddr.String()),
+			[][]byte{jsoncdc.MustEncode(cadence.NewAddress(userAddress))},
+		)
+		assert.EqualValues(t, cadence.NewInt(0), length)
+	})
+
+	t.Run("Shouldn not be able to withdraw an NFT that does not exist in a collection", func(t *testing.T) {
+		nonExistentID := uint64(3333333)
+
+		leagueTransferItem(
+			t, b,
+			nftAddr, leagueAddr, leagueSigner,
+			nonExistentID, userAddress, true,
+		)
+	})
+
+	// transfer an NFT
+	t.Run("Should be able to withdraw an NFT and deposit to another accounts collection", func(t *testing.T) {
+		createPlay(t, b, nftAddr, leagueAddr, leagueSigner)
+		createMatch(t, b, nftAddr, leagueAddr, leagueSigner)
+		addPlaytoMatch(t, b, nftAddr, leagueAddr, leagueSigner)
+		leagueMintItem(t, b, nftAddr, leagueAddr, leagueSigner)
+		// Cheat: we have minted one item, its ID will be zero
+		leagueTransferItem(t, b, nftAddr, leagueAddr, leagueSigner, 1, userAddress, false)
+	})
+
+	length := executeScriptAndCheck(
+		t,
+		b, leagueGenerateInspectCollectionLenScript(nftAddr.String(), leagueAddr.String()),
+		[][]byte{jsoncdc.MustEncode(cadence.NewAddress(userAddress))},
+	)
+	assert.EqualValues(t, cadence.NewInt(1), length)
+
+}
+
+func TestRetire(t *testing.T) {
+	b := newEmulator()
+
+	nftAddr, leagueAddr, leagueSigner := DeployContracts(b, t)
+
+	t.Run("Should be able to add a play", func(t *testing.T) {
+		createPlay(t, b, nftAddr, leagueAddr, leagueSigner)
+		createMatch(t, b, nftAddr, leagueAddr, leagueSigner)
+		addPlaytoMatch(t, b, nftAddr, leagueAddr, leagueSigner)
+		retirePlay(t, b, nftAddr, leagueAddr, leagueSigner)
+	})
+}
+
+func TestNewSchedule(t *testing.T) {
+	b := newEmulator()
+
+	nftAddr, leagueAddr, leagueSigner := DeployContracts(b, t)
+
+	t.Run("Should be able to add a play", func(t *testing.T) {
+		newSchedule(t, b, nftAddr, leagueAddr, leagueSigner)
+	})
+}
+
+func replaceleagueAddressPlaceholders(code, nftAddress, leagueAddress string) []byte {
+	return []byte(replaceImports(
+		code,
+		map[string]*regexp.Regexp{
+			nftAddress:    nftAddressPlaceholder,
+			leagueAddress: leagueAddressPlaceHolder,
+		},
+	))
+}
+
+func loadNonFungibleToken() []byte {
+	return nft_contracts.NonFungibleToken()
+}
+
+func loadLeagueHeros(nftAddr string) []byte {
+	return []byte(replaceImports(
+		string(readFile(LeagueHerosContractPath)),
+		map[string]*regexp.Regexp{
+			nftAddr: nftAddressPlaceholder,
+		},
+	))
+	// return replaceleagueAddressPlaceholders(
+	// 	string(readFile(LeagueHerosContractPath)),
+	// 	nftAddr,
+	// 	"0xNFTADDRESS",
+	// )
+}
+
+func GenerateSetupAccountScript(nftAddr, leagueAddr string) []byte {
+	return replaceleagueAddressPlaceholders(
+		string(readFile(SetupAccountPath)),
+		nftAddr,
+		leagueAddr,
+	)
+}
+
+func GenerateScript(Path, nftAddr, leagueAddr string) []byte {
+	return replaceleagueAddressPlaceholders(
+		string(readFile(Path)),
+		nftAddr,
+		leagueAddr,
+	)
+}
+
+func GenerateMintleaguescript(nftAddr, leagueAddr string) []byte {
+	return replaceleagueAddressPlaceholders(
+		string(readFile(MintPath)),
+		nftAddr,
+		leagueAddr,
+	)
+}
+
+func leagueGenerateTransferleaguecript(nftAddr, leagueAddr string) []byte {
+	return replaceleagueAddressPlaceholders(
+		string(readFile(TransferPath)),
+		nftAddr,
+		leagueAddr,
+	)
+}
+
+func leagueGenerateInspectleaguesupplyScript(nftAddr, leagueAddr string) []byte {
+	return replaceleagueAddressPlaceholders(
+		string(readFile(InspectSupplyPath)),
+		nftAddr,
+		leagueAddr,
+	)
+}
+
+func leagueGenerateInspectCollectionLenScript(nftAddr, leagueAddr string) []byte {
+	return replaceleagueAddressPlaceholders(
+		string(readFile(InspectCollectionLenPath)),
+		nftAddr,
+		leagueAddr,
+	)
+}
+
+func leagueGenerateScript(path, nftAddr, leagueAddr string) []byte {
+	return replaceleagueAddressPlaceholders(
+		string(readFile(path)),
+		nftAddr,
+		leagueAddr,
+	)
+}
